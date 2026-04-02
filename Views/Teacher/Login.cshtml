@@ -1,0 +1,102 @@
+﻿@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Superbrain | Phần mềm đánh giá năng lực</title>
+    <link href="~/favicon.png" rel="icon" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/AppTest.styles.css" asp-append-version="true" />
+    <style>
+        html, body {
+            cursor: url(https://cdn.custom-cursor.com/db/18274/32/starter-orange-smile-cursor.png), default !important;
+        }
+
+        a:hover, li:hover, button:hover, span.button:hover {
+            cursor: url(https://cdn.custom-cursor.com/db/18273/32/starter-orange-smile-pointer.png), pointer !important;
+        }
+    </style>
+</head>
+<body style="background-image:url('/images/bg.webp');background-size:cover;">
+    <section>
+        <div class="pt-5 h-100 d-flex align-items-center justify-content-center">
+            <div class="container" style="background:none;">
+                <div class="banner-mockup p-0">
+                    <div class="card" style="background: none; border: 0; width: 100%;">
+                        <div class="card-body p-5" style="background:#51a34785;border-radius:7px;">
+                            <div class="row text-center">
+                                <div class="col-12 col-md-4 col-sm-12">
+                                    <div class="relative welcome-form">
+                                        <img alt="welcome" loading="lazy" width="auto" height="auto" decoding="async" data-nimg="1" class="img-fluid z-10" src="/images/bg_main.svg" style="color: transparent;position:relative;min-height:350px;">
+                                    </div>
+                                </div>
+                                <div class="col-12 col-md-8 col-sm-12 text-center" style="position:relative;">
+                                    <img src="/images/logo.png" alt="" width="auto" height="55" style="margin-bottom:20px;">
+                                    <form onsubmit="event.preventDefault(); submitLogin()" style="">
+                                        <div class="form-floating mb-3">
+                                            <input type="text" class="form-control" id="username" name="username" required="" placeholder="Tên đăng nhập">
+                                            <label for="username">Tên đăng nhập</label>
+                                        </div>
+                                        <div class="form-floating">
+                                            <input type="password" class="form-control" id="password" name="password" required="" placeholder="Mật khẩu">
+                                            <label for="password">Mật khẩu</label>
+                                        </div>
+                                        <button type="submit" class="btn btn-lg btn-success mb-3 mt-3 text-center fw-bolder w-100" style="background: linear-gradient(180deg, #dcf535, #c5d32d 13.41%, #00a64e 86.03%, #007338);border: 3px solid #FFF; border-radius: 25px;">
+                                            Đăng nhập
+                                        </button>
+                                        <a class="text-white fw-bold text-decoration-none" href="/">Đăng nhập với tài khoản học viên?</a>
+                                    </form>
+                                </div>
+                                <p class="fw-bolder" style="color:#FFF200;position:absolute;bottom:0;">Hệ thống đào tạo Superbrain</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <div class="toast-container position-fixed top-0 end-0 p-3">
+        <div class="toast bg-light" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <strong class="me-auto">Thông báo</strong>
+                <small>2 seconds ago</small>
+            </div>
+            <div class="toast-body">
+                <span id="notificationText"></span>
+            </div>
+        </div>
+    </div>
+    <script>
+        function submitLogin() {
+            $.ajax({
+                url: '/Account/Login',
+                type: 'POST',
+                data: {
+                    username: document.getElementById("username").value,
+                    password: document.getElementById("password").value
+                },
+                success: function (response) {
+                    if (response.success) {
+                        showNotification('Đăng nhập thành công!');
+                        window.location.href = response.redirectUrl;
+                    } else {
+                        showNotification(response.message);
+                    }
+                },
+                error: function (xhr, status, error) {
+                    console.error("Lỗi đăng nhập:" + error);
+                }
+            });
+        }
+
+    </script>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+</body>
+</html>

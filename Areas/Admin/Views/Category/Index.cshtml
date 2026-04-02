@@ -1,0 +1,164 @@
+@{
+    ViewData["Title"] = "Quản lý danh mục";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+<div class="d-flex justify-content-between mb-2 mt-3">
+    <div></div>
+    <a id="btnAdd" class="btn btn-success"><i class="ti ti-plus"></i> Thêm mới</a>
+</div>
+
+<style>
+    #catTable .cat-swatch {
+        width: 16px;
+        height: 16px;
+        border-radius: 5px;
+        display: inline-block;
+        vertical-align: middle;
+        border: 1px solid rgba(0, 0, 0, .08);
+        margin-right: 10px;
+    }
+
+    #catTable .cat-toggle-content {
+        max-height: 0;
+        opacity: 0;
+        overflow: hidden;
+        transition: max-height .28s ease, opacity .18s ease, padding .28s ease;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        padding: 0 15px;
+    }
+
+    #catTable .cat-toggle-content.open {
+        max-height: 1200px;
+        opacity: 1;
+        padding: 10px 15px;
+    }
+    
+    #catTable .cat-setting-row {
+        margin: 0;
+        padding: 10px 12px;
+        border-radius: 12px;
+        border: 1px solid rgba(0,0,0,.06);
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+    }
+
+    #catTable .cat-add-row {
+        margin: 0;
+        padding: 10px 12px;
+        border-radius: 12px;
+        border: 0;
+    }
+
+    #catTable tr.answers-row td {
+        padding: 0 !important;
+        border-top: 0 !important;
+        border-bottom: 0 !important;
+    }
+</style>
+
+<table class="table table-bordered table-hover table-responsive">
+    <thead class="bg-success text-white">
+        <tr>
+            <th class="text-center">STT</th>
+            <th>Tên danh mục</th>
+            <th>Mô tả</th>
+            <th class="text-center">Số lượng câu hỏi</th>
+            <th class="text-center">Trạng thái</th>
+            <th class="text-end me-3">Thao tác</th>
+        </tr>
+    </thead>
+    <tbody id="catTable">
+        <tr>
+            <td colspan="7" class="text-center">Đang "tải dữ liệu" vui lòng đợi!</td>
+        </tr>
+    </tbody>
+</table>
+
+<!-- Modal User -->
+<div class="modal fade" id="categoryModal" tabindex="-1">
+    <div class="modal-lg modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Danh mục câu hỏi</h5>
+                <a href="#" class="btn btn-sm btn-light" data-bs-dismiss="modal">
+                    <i class="ti ti-x"></i>
+                </a>
+            </div>
+            <form id="categoryForm">
+                <div class="modal-body">
+                    <input type="hidden" id="catId" name="id">
+                    <div class="mb-3">
+                        <label>Tên danh mục <span class="text-danger">*</span></label>
+                        <input type="text" id="name" name="name" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label>Mô tả</label>
+                        <input type="text" id="description" name="description" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label>Thứ tự hiển thị</label>
+                        <input type="number" id="displayOrder" name="displayOrder" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label>Kích hoạt</label>
+                        <select id="enable" name="enable" class="form-control">
+                            <option value="false">Không kích hoạt</option>
+                            <option value="true" selected>Kích hoạt</option>
+                        </select> 
+                    </div>
+                    <div class="mb-3">
+                        <label>Màu sắc</label>
+                        <input type="color" id="color" name="color" class="form-control form-control-color" value="#198754">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" class="btn btn-success">Lưu thay đổi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal User -->
+<div class="modal fade" id="settingModal" tabindex="-1">
+    <div class="modal-lg modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Cài đặt danh mục</h5>
+                <a href="#" class="btn btn-sm btn-light" data-bs-dismiss="modal">
+                    <i class="ti ti-x"></i>
+                </a>
+            </div>
+            <form id="createSettingForm">
+                <div class="modal-body">
+                    <input type="hidden" id="settingId" name="id">
+                    <input type="hidden" id="categoryId" name="categoryId">
+                    <div class="mb-3">
+                        <label>Từ điểm</label>
+                        <input type="number" id="settingFrom" name="fromPoint" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label>Đến điểm</label>
+                        <input type="number" id="settingTo" name="toPoint" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label>Mô tả</label>
+                        <textarea type="text" id="settingDescription" name="description" class="form-control"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" class="btn btn-success">Lưu thay đổi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <script src="~/js/Category.js"></script>
+}

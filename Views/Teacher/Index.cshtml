@@ -1,0 +1,202 @@
+@{
+    ViewData["Title"] = "Index";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<style>
+    #radarChartResult {
+        width: 600px; /* Give it an explicit width */
+        height: 450px; /* Give it an explicit height */
+        margin: 0 auto;
+    }
+
+    #barChartResult {
+        width: 600px; /* Give it an explicit width */
+        height: 450px; /* Give it an explicit height */
+        margin: 0 auto;
+    }
+
+    #radarChart {
+        width: 600px; /* Give it an explicit width */
+        height: 450px; /* Give it an explicit height */
+        margin: 0 auto;
+    }
+
+    #columnChart {
+        width: 600px; /* Give it an explicit width */
+        height: 450px; /* Give it an explicit height */
+        margin: 0 auto;
+    }
+    .scroll-box {
+        width: 75%;
+        height: calc(100vh - 200px);
+        background: white;
+        border: 1px solid #ccc;
+        padding: 20px;
+        margin-top:50px;
+        overflow: hidden;
+        box-shadow: 2px 4px 8px 4px #51a34755;
+        box-sizing: border-box;
+    }
+
+    .table-wrapper {
+        max-height: calc(100vh - 360px); /* chiều cao phần tbody có thể scroll */
+        overflow-y: auto;
+        scrollbar-width: thin;
+        overscroll-behavior-x: initial;
+        scroll-behavior: smooth;
+    }
+
+    .scrollbar-width-none {
+        scrollbar-width: none;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    thead th {
+        position: sticky;
+        top: 0;
+        background: #198754; /* Bootstrap success */
+        color: white;
+        z-index: 1;
+    }
+
+    tbody tr:nth-child(even) {
+        background-color: #f9f9f9;
+    }
+
+    th, td {
+        padding: 1.2rem!important;
+        text-align: left;
+        white-space: nowrap;
+    }
+
+    .box-dethi {
+        margin: 0 auto;
+        width: 100%;
+        background: white;
+        border: 1px solid #ccc;
+        padding: 10px;
+        overflow: hidden;
+        box-shadow: 1px 1px 2px 1px #51a34755;
+        box-sizing: border-box;
+    }
+</style>
+<div class="d-flex align-items-center mb-2 sticky-top" style="background:#51a347;padding:10px 30px;z-index:1;">
+    <div class="flex-shrink-0">
+        <a href="/gv"><img src="/images/logo.png" alt="Sơn Hà Lê" class="img-fluid ms-5 me-3" style="height: 40px;"></a>
+        <img src="/images/avatar.png" alt="Sơn Hà Lê" class="img-fluid rounded-circle border border-white border-3" style="width: 40px;">
+    </div>
+    <div class="flex-grow-1 ms-3">
+        <div>
+            <h5 class="mb-0 fs-6 me-2 text-white">👋 Xin chào, <b>@TempData["name"]</b></h5>
+            <p class="mb-0 text-white"> let's play quiz</p>
+        </div>
+    </div>
+    <div class="flex-grow-1 ms-5 text-end">
+        <a href="javascript:signout()" class="btn btn-sm btn-rounded" style="background:#6cbf45;color:#fff;border:1px solid #fff;">
+            Đăng xuất <i class="ti ti-logout"></i>
+        </a>
+    </div>
+</div>
+<div style=" height: 100%;margin: auto; padding: 0;overflow: hidden;display: flex; justify-content: center; align-items: center;background-color: #f0f0f000; ">
+    <div class="scroll-box">
+        <div class="d-flex justify-content-between mb-3" style="width:100%;">
+            <input type="text" id="searchInput" class="form-control w-25" placeholder="Tìm kiếm học viên...">
+            <span class="text-success"><i class="ti ti-filter"></i><span id="counts"></span> học viên</span>
+        </div>
+        <div class="table-wrapper">
+            <table class="table table-striped table-hover table-responsive bg-white">
+                <thead class="bg-success text-white">
+                    <tr>
+                        <th class="bg-success text-center">STT</th>
+                        <th class="bg-success text-center">Mã học viên</th>
+                        <th class="bg-success">Họ Tên</th>
+                        <th class="bg-success text-center">Năm sinh</th>
+                        <th class="bg-success text-center">Số điện thoại</th>
+                        <th class="bg-success text-center">Số lần kiểm tra</th>
+                        <th class="bg-success text-center">Ngày kiểm tra</th>
+                        <th class="bg-success"></th>
+                    </tr>
+                </thead>
+                <tbody id="studentTable">
+                    <tr>
+                        <td colspan="7" class="text-center">Đang tải dữ liệu, vui lòng đợi trong giây lát ...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="d-flex justify-content-between text-center mt-3" style="width:100%;">
+            <nav>
+                <ul class="pagination justify-content-center">
+                    <li class="page-item">
+                        <button class="btn-sm page-link" id="prevPage">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-narrow-left-dashed"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M5 12h6m3 0h1.5m3 0h.5" /><path d="M5 12l4 4" /><path d="M5 12l4 -4" /></svg>
+                        </button>
+                    </li>
+                    <li class="page-item disabled"><span class="page-link" id="currentPage">1</span></li>
+                    <li class="page-item">
+                        <button class="btn-sm page-link" id="nextPage">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-narrow-right-dashed"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M5 12h.5m3 0h1.5m3 0h6" /><path d="M15 16l4 -4" /><path d="M15 8l4 4" /></svg>
+                        </button>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="nhapdiemModal" tabindex="-1" aria-labelledby="nhapdiemModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <form id="nhapdiemForm" style="overflow: auto;scrollbar-width: none;">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="nhapdiemModalLabel">Nhập điểm bài thi trên giấy</h5>
+                    <div>
+                        <button type="submit" class="btn btn-sm btn-success"><i class="ti ti-database-import"></i> Cập nhật</button>
+                        <button type="button" class="btn btn-sm btn-danger" data-bs-dismiss="modal" aria-label="Close"><i class="ti ti-x"></i> Đóng</button>
+                    </div>
+                </div>
+                <div class="modal-body">
+                    <input id="sessionId" type="hidden"/>
+                    <input id="studentId" type="hidden"/>
+                    <div id="showlist_input"></div>
+                    <div class="mt-3">
+                        <label class="form-label fw-bolder mb-1" for="generalComment">Nhận xét chung</label>
+                        <textarea id="generalComment" name="generalComment" class="form-control" rows="3" placeholder="Nhập nhận xét chung của giáo viên..."></textarea>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div id="student-print-chart-host" class="visually-hidden" style="position:absolute;left:-9999px;top:0;width:600px;height:920px;overflow:hidden;pointer-events:none;" aria-hidden="true">
+    <div id="radarChartPrint" style="width:600px;height:450px;"></div>
+    <div id="columnChartPrint" style="width:600px;height:450px;"></div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+@section Scripts {
+    <script>
+        window.studentOverviewConfig = {
+            printExamUrl: "/LoadPrintExam",
+            resultDetailUrl: "/Teacher/LoadResultTestById",
+            radarChartUrl: "/GetRadarChartData",
+            comparisonChartUrl: "/GetComparisonChartData",
+            reportLogoUrl: "/images/title.webp",
+            reportQrDataUrl: "",
+            reportRecommendations: { home: "", course: "" },
+            reportHotline: "1900 xxxx",
+            reportWebsite: "",
+            reportTitle: "",
+            reportSubtitle: "",
+            reportSignatureLabel: "Chữ ký Chuyên gia",
+            reportSignedHint: "(Đã ký)",
+            reportUnitName: "Superbrain"
+        };
+    </script>
+    <script src="~/js/studentPrintShared.js"></script>
+    <script src="~/js/teacherJs.js"></script>
+}

@@ -1,0 +1,156 @@
+
+@{
+    ViewData["Title"] = "ResultDetail";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    .scroll-box {
+        width: 75%;
+        height: calc(100vh - 200px);
+        background: white;
+        border: 1px solid #ccc;
+        padding: 20px;
+        margin-top: 50px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        box-shadow: 2px 4px 8px 4px #51a34755;
+        box-sizing: border-box;
+    }
+
+    .table-wrapper {
+        max-height: calc(100vh - 360px);
+        overflow-y: auto;
+        scrollbar-width: thin;
+        overscroll-behavior-x: initial;
+        scroll-behavior: smooth;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    thead th {
+        position: sticky;
+        top: 0;
+        background: #198754;
+        color: white;
+        z-index: 1;
+    }
+
+    #radarChart {
+        width: 100%;
+        height: auto;
+        min-height: 350px;
+        max-height: 500px;
+        margin: 0 auto;
+        background: #ffffff00;
+        border-radius: 10px;
+        padding: 20px;
+    }
+
+    #columnChart {
+        width: 100%;
+        height: auto;
+        min-height: 350px;
+        max-height: 500px;
+        margin: 0 auto;
+        background: #ffffff00;
+        border-radius: 10px;
+        padding: 20px;
+    }
+</style>
+
+<div class="d-flex align-items-center mb-2 sticky-top" style="background:#51a347;padding:10px 30px;z-index:1;">
+    <div class="flex-shrink-0">
+        <a href="/gv"><img src="/images/logo.png" alt="Sơn Hà Lê" class="img-fluid ms-5 me-3" style="height: 40px;"></a>
+        <img src="/images/avatar.png" alt="Sơn Hà Lê" class="img-fluid rounded-circle border border-white border-3" style="width: 40px;">
+    </div>
+    <div class="flex-grow-1 ms-3">
+        <div>
+            <h5 class="mb-0 fs-6 me-2 text-white">👋 Xin chào, <b>@TempData["name"]</b></h5>
+            <p class="mb-0 text-white"> let's play quiz</p>
+        </div>
+    </div>
+    <div class="flex-grow-1 ms-5 text-end">
+        <a href="/gv" class="btn btn-sm btn-warning fw-bold me-2" style="border-width: 2px;"><i class="ti ti-arrow-left"></i> Quay về</a>
+        <a href="javascript:signout()" class="btn btn-sm btn-rounded" style="background:#6cbf45;color:#fff;border:1px solid #fff;">
+            Đăng xuất <i class="ti ti-logout"></i>
+        </a>
+    </div>
+</div>
+
+<div style=" height: 100%;margin: auto; padding: 0;overflow: auto;display: flex; justify-content: center; align-items: center;background-color: #f0f0f000; ">
+    <div class="scroll-box">
+        <input type="hidden" id="studentId" value="@TempData["studentId"]" />
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+            <div class="fw-bolder">
+                Học viên: <span id="studentNameLabel" class="text-success">...</span>
+            </div>
+        </div>
+
+        <div class="row" style="width:100%;">
+            <div class="col col-12 col-sm-12 col-md-12">
+                <div class="table-wrapper">
+                    <table class="table table-bordered table-hover table-responsive bg-white mb-0">
+                        <tbody id="showlist"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="col col-12 col-sm-12 col-md-6 mt-3">
+                <div class="card-header fw-bolder" style="background:#51A347;color:#fff;border-radius:10px 10px 0 0;">
+                    Biểu đồ kết quả kiểm tra năng lực của học viên
+                </div>
+                <div class="card-body" style="background:#ffffff90;border:1px solid rgba(0,0,0,.06);border-top:0;border-radius:0 0 10px 10px;">
+                    <div id="radarChart"></div>
+                </div>
+            </div>
+
+            <div class="col col-12 col-sm-12 col-md-6 mt-3">
+                <div class="card-header fw-bolder" style="background:#51A347;color:#fff;border-radius:10px 10px 0 0;">
+                    Biểu đồ so sánh kết quả kiểm tra năng lực
+                </div>
+                <div class="card-body" style="background:#ffffff90;border:1px solid rgba(0,0,0,.06);border-top:0;border-radius:0 0 10px 10px;">
+                    <div id="columnChart"></div>
+                </div>
+            </div>
+
+            <div class="col col-12 col-sm-12 col-md-12 mt-3">
+                <div class="card-header fw-bolder" style="background:#51A347;color:#fff;border-radius:10px 10px 0 0;">
+                    Chi tiết đúng/sai theo lần làm bài
+                </div>
+                <div class="card-body" style="background:#ffffff90;border:1px solid rgba(0,0,0,.06);border-top:0;border-radius:0 0 10px 10px;">
+                    <div class="d-flex align-items-center gap-2 flex-wrap mb-2">
+                        <label class="fw-bolder mb-0">Chọn lần:</label>
+                        <select id="attemptSelect" class="form-select form-select-sm w-auto"></select>
+                    </div>
+
+                    <div id="attemptGeneralComment" class="mb-3"></div>
+
+                    <div class="table-responsive">
+                        <table class="table table-sm table-striped table-bordered align-middle bg-white">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width:48px;" class="text-center">#</th>
+                                    <th>Câu hỏi</th>
+                                    <th style="width:130px;" class="text-center">Điểm</th>
+                                    <th style="width:120px;" class="text-center">Kết quả</th>
+                                </tr>
+                            </thead>
+                            <tbody id="attemptQuestionsBody"></tbody>
+                        </table>
+                    </div>
+
+                    <div id="attemptCategoryTotals" class="mt-3"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
+@section Scripts {
+    <script src="~/js/resultDetailJs.js"></script>
+}

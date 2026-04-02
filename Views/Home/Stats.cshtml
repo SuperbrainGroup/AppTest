@@ -1,0 +1,129 @@
+
+@{
+    ViewData["Title"] = "Thông tin học viên";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<style>
+    #radarChart {
+        width: 100%;
+        height: auto;
+        min-height:350px;
+        max-height:500px;
+        margin: 0 auto;
+        background: #ffffff00;
+        border-radius: 10px;
+        padding: 20px;
+    }
+
+    #columnChart {
+        width: 100%;
+        height: auto;
+        min-height: 350px;
+        max-height: 500px;
+        margin: 0 auto;
+        background: #ffffff00;
+        border-radius: 10px;
+        padding: 20px;
+    }
+
+    .scroll-box {
+        width: 60%;
+        height: calc(100vh - 200px);
+        background: white;
+        border: 1px solid #ccc;
+        padding: 20px;
+        margin-top: 50px;
+        overflow: auto;
+        scroll-behavior: smooth;
+        scrollbar-width: none;
+        box-shadow: 2px 4px 8px 4px #51a34755;
+        box-sizing: border-box;
+    }
+
+    .table-wrapper {
+        max-height: calc(100vh - 360px); /* chiều cao phần tbody có thể scroll */
+        overflow-y: auto;
+        scrollbar-width: none;
+    }
+
+    .scrollbar-width-none {
+        scrollbar-width: none;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    thead th {
+        position: sticky;
+        top: 0;
+        background: #198754; /* Bootstrap success */
+        color: white;
+        z-index: 1;
+    }
+
+    tbody tr:nth-child(even) {
+        background-color: #f9f9f9;
+    }
+
+    th, td {
+        padding: 1.2rem !important;
+        text-align: left;
+        white-space: nowrap;
+    }
+
+    .box-dethi {
+        margin: 0 auto;
+        width: 100%;
+        background: white;
+        border: 1px solid #ccc;
+        padding: 20px;
+        overflow: hidden;
+        box-shadow: 1px 1px 2px 1px #51a34755;
+        box-sizing: border-box;
+    }
+</style>
+
+<div class="d-flex align-items-center mb-2 sticky-top" style="background:#51a347;padding:10px 30px;z-index:1;">
+    <div class="flex-shrink-0">
+        <a href="/"><img src="/images/logo.png" alt="Sơn Hà Lê" class="img-fluid ms-5 me-3" style="height: 40px;"></a>
+        <img src="/images/avatar.png" alt="Sơn Hà Lê" class="img-fluid rounded-circle border border-white border-3" style="width: 40px;">
+    </div>
+    <div class="flex-grow-1 ms-3">
+        <div>
+            <h5 class="mb-0 fs-6 me-2 text-white">👋 Xin chào, <b>@TempData["name"]</b></h5>
+            <p class="mb-0 text-white"> let's play quiz</p>
+        </div>
+    </div>
+    <div class="flex-grow-1 ms-5 text-end d-flex justify-content-between">
+        <div class="">
+            <a href="/stats" class="btn btn-sm btn-rounded fw-bold ms-3" style="background: #dcffc9; color: #51a347;">Báo cáo</a>
+        </div>
+        <a href="javascript:signout()" class="btn btn-sm btn-rounded" style="background:#6cbf45;color:#fff;border:1px solid #fff;">
+            Đăng xuất <i class="ti ti-logout"></i>
+        </a>
+    </div>
+</div>
+<div style=" height: 100%;margin: auto; padding: 0;overflow: auto;scroll-behavior:smooth;scrollbar-width:none;display: flex; justify-content: center; align-items: center;background-color: #f0f0f000;">
+    <div class="scroll-box">
+        <div class="row" style="width:100%;">
+            <div class="col col-12 col-sm-12 col-md-6">
+                <div class="card-body">
+                    <div id="radarChart"></div>
+                </div>
+                <div class="card-footer text-center" style="background:none;border:1px dashed #dadada;">Biểu đồ kết quả kiểm tra năng lực của học viên </div>
+            </div>
+            <div class="col col-12 col-sm-12 col-md-6">
+                <div class="card-body">
+                    <div id="columnChart"></div>
+                </div>
+                <div class="card-footer text-center" style="background:none;border:1px dashed #dadada;">Biểu đồ so sánh kết quả kiểm tra năng lực</div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
+@section Scripts {
+    <script src="~/js/Stats.js"></script>
+}

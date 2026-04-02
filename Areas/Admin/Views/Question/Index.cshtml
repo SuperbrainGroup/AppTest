@@ -1,0 +1,198 @@
+@{
+    ViewData["Title"] = "Cài đặt câu hỏi";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+<style>
+    .teacher-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+    }
+
+    .teacher-toolbar .search-wrap {
+        flex: 1 1 320px;
+        max-width: 460px;
+    }
+
+    .teacher-toolbar .count-wrap {
+        font-weight: 600;
+        color: #198754;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+    }
+
+    .teacher-toolbar .action-wrap {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .card-shell {
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+        box-shadow: 0 10px 26px rgba(15, 23, 42, 0.05);
+        overflow: hidden;
+    }
+
+    .card-shell .card-header {
+        background: #f0fdf4;
+        color: #166534;
+        border: none;
+        font-weight: 700;
+    }
+
+    .tree-view ul, li {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+    .tree-view li {
+        padding-left: 1em;
+        border: 1px dotted #cbd5f5;
+        border-width: 0 0 1px 1px;
+        padding-top: 10px;
+        padding-bottom: 10px;
+    }
+    .tree-view li.container {
+        border-bottom: 0px;
+    }
+    .tree-view li.empty {
+        font-style: italic;
+        color: silver;
+        border-color: silver;
+    }
+    .tree-view ul li:last-child ul {
+        border-left: 1px solid white;
+        margin-left: -17px;
+    }
+
+    @@media (max-width: 767.98px) {
+        .teacher-toolbar .search-wrap {
+            max-width: none;
+            width: 100%;
+        }
+
+        .teacher-toolbar .action-wrap {
+            width: 100%;
+        }
+
+        .teacher-toolbar .action-wrap .form-select,
+        .teacher-toolbar .action-wrap .btn {
+            width: 100%;
+        }
+    }
+</style>
+<div class="teacher-toolbar">
+    <div class="search-wrap">
+        <input type="text" id="searchString" name="searchString" class="form-control" placeholder="Tìm kiếm câu hỏi...">
+    </div>
+    <div class="count-wrap">
+        <i class="ti ti-filter"></i>
+        <span id="counts"></span> câu hỏi
+    </div>
+    <div class="action-wrap">
+        <select class="form-select fw-semibold" id="categorySelect"></select>
+        <button type="button" class="btn btn-success" id="btn-add">+ Thêm câu hỏi</button>
+    </div>
+</div>
+<div class="card card-shell">
+    <div class="card-header">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div class="fw-semibold">Danh sách câu hỏi</div>
+            <div class="small opacity-75">Tự động mở/collapse phần đáp án khi cần</div>
+        </div>
+    </div>
+    <div class="card-body">
+        <div id="tblQuestion" class="d-flex flex-column gap-2"></div>
+    </div>
+</div>
+<div class="modal fade" id="createModal" tabindex="-1" aria-labelledby="createModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createModalLabel">Cập nhật câu hỏi</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id ="createQuestionForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="createCategoryId" class="form-label">Danh mục câu hỏi</label>
+                        <select class="form-select fw-semibold" id="createCategoryId" name="categoryId"></select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="createName" class="form-label">Câu hỏi</label>
+                        <input type="hidden" class="form-control" id="createId" name="id" >
+                        <input type="text" class="form-control" id="createName" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="maxPoint" class="form-label">Số điểm</label>
+                        <input type="number" class="form-control" id="maxPoint" name="maxPoint" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="createImage" class="form-label">Hình ảnh</label>
+                        <input type="file" class="form-control" id="createImage" name="image">
+                    </div>
+                    <div class="mb-3">
+                        <label for="createAudio" class="form-label">Audio câu hỏi (tùy chọn)</label>
+                        <input type="file" class="form-control" id="createAudio" name="audio" accept="audio/*">
+                        <div id="audioPreviewContainer" class="mt-2" style="display:none;">
+                            <audio id="audioPreviewPlayer" controls style="width:100%;"></audio>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="createLop" class="form-label">Dành cho học sinh lớp</label>
+                        <select class="form-select" id="createLop" name="lop" required>
+                            @for (var g = 1; g <= 12; g++)
+                            {
+                                <option value="@g">Lớp @g</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary close-modal" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" class="btn btn-success" id="submitCreateQuestion">Lưu</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form id="createAnswerForm">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Thêm đáp án</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="questionId" name="questionId"/>
+                    <input type="hidden" id="answerId" name="id"/>
+                    <div class="form-floating mb-3">
+                        <input type="text" class="form-control" id="floatingText" name="answerText" placeholder="Đáp án của câu hỏi">
+                        <label for="floatingText">Đáp án</label>
+                    </div>
+                    <div class="form-floating mb-3">
+                        <input type="number" class="form-control" id="floatingPoint" name="point" placeholder="Số điểm của đáp án">
+                        <label for="floatingPoint">Số điểm của đáp án</label>
+                    </div>
+                    <input type="file" class="form-control mb-3" id="floatingImage" name="image" placeholder="Đáp án hình ảnh">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary close-modal" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" class="btn btn-success" id="submitCreateAnswer">Lưu</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <script src="~/js/questionJs.js"></script>
+}
+
