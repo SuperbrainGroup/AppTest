@@ -39,7 +39,17 @@ $(document).ready(function () {
             success: function (response) {
                 if (response.success) {
                     let body = "";
+                    let displayCount = 0; 
+                    let filterLop = $("#classFilter").val(); 
+
                     $.each(response.data, function (index, q) {
+                        let qLop = String(q.lop != null ? q.lop : (q.Lop != null ? q.Lop : ""));
+                        
+                        if (filterLop !== "" && filterLop !== qLop) {
+                            return true; 
+                        }
+
+                        displayCount++; 
                         let count = 0;
                         q.answers.forEach(() => count++);
                         const imageQuestion = q.image ? `<img src="${q.image}" class="rounded-2" width="42" height="42" alt="">` : "";
@@ -88,8 +98,7 @@ $(document).ready(function () {
                                     <div class="d-flex align-items-start justify-content-between gap-2">
                                         <div class="d-flex align-items-center gap-2" style="min-width:0;">
                                             <div class="text-center" style="width:44px;">
-                                                <div class="fw-semibold">${index + 1}</div>
-                                            </div>
+                                                <div class="fw-semibold">${displayCount}</div> </div>
                                             <div class="text-center" style="width:44px;">
                                                 ${imageQuestion}
                                             </div>
@@ -142,8 +151,15 @@ $(document).ready(function () {
                             </div>
                         `;
                     });
-                    $("#counts").text(response.data.length);
-                    $tblQuestion.html(body);
+
+                    $("#counts").text(displayCount);
+                    
+                    if (displayCount > 0) {
+                        $tblQuestion.html(body);
+                    } else {
+                        $tblQuestion.html("<div class='text-center text-muted py-4'>Không có câu hỏi nào phù hợp với bộ lọc!</div>");
+                    }
+
                 } else {
                     $tblQuestion.html("<div class='text-center text-muted py-4'>Không tìm thấy dữ liệu câu hỏi!</div>");
                 }
@@ -153,6 +169,15 @@ $(document).ready(function () {
             }
         });
     }
+
+    // Xử lý khi thay đổi Danh mục hoặc Lớp
+    $("#categorySelect, #classFilter").change(function () {
+        LoadlistQuestion();
+    });
+
+    $("#searchString").on("input", debounce(function () {
+        LoadlistQuestion();
+    }, 700));
     // 3️⃣ Xử lý khi thay đổi số lượng user mỗi trang
     $("#categorySelect").change(function () {
         LoadlistQuestion();

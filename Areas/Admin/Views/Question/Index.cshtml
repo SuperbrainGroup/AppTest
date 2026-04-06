@@ -88,23 +88,40 @@
         }
     }
 </style>
-<div class="teacher-toolbar">
-    <div class="search-wrap">
-        <input type="text" id="searchString" name="searchString" class="form-control" placeholder="Tìm kiếm câu hỏi...">
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-2 mt-3">
+    
+    <div class="d-flex flex-wrap align-items-center gap-2" style="flex: 1 1 auto;">
+        <div class="search-wrap" style="width: 280px;">
+            <input type="text" id="searchString" name="searchString" class="form-control" placeholder="Tìm kiếm câu hỏi...">
+        </div>
+        <select class="form-select fw-semibold text-primary" id="classFilter" style="width: 150px;">
+            <option value="">Lọc theo lớp</option>
+            @for (var g = 1; g <= 12; g++)
+            {
+                <option value="@g">Lớp @g</option>
+            }
+        </select>
+        <select class="form-select fw-semibold text-primary" id="categorySelect" style="width: 220px;"></select>
     </div>
-    <div class="count-wrap">
-        <i class="ti ti-filter"></i>
-        <span id="counts"></span> câu hỏi
-    </div>
+    
     <div class="action-wrap">
-        <select class="form-select fw-semibold" id="categorySelect"></select>
-        <button type="button" class="btn btn-success" id="btn-add">+ Thêm câu hỏi</button>
+        <button type="button" class="btn btn-success shadow-sm" id="btn-add">
+            <i class="ti ti-plus"></i> Thêm câu hỏi
+        </button>
     </div>
 </div>
+
 <div class="card card-shell">
     <div class="card-header">
         <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-            <div class="fw-semibold">Danh sách câu hỏi</div>
+            
+            <div class="fw-semibold d-flex align-items-center gap-2">
+                Danh sách câu hỏi
+                <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 rounded-pill px-2 py-1" style="font-size: 0.85rem;">
+                    <i class="ti ti-filter"></i> <span id="counts">0</span> câu hỏi
+                </span>
+            </div>
+            
             <div class="small opacity-75">Tự động mở/collapse phần đáp án khi cần</div>
         </div>
     </div>
@@ -112,6 +129,7 @@
         <div id="tblQuestion" class="d-flex flex-column gap-2"></div>
     </div>
 </div>
+
 <div class="modal fade" id="createModal" tabindex="-1" aria-labelledby="createModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
