@@ -295,7 +295,7 @@
         
         .exam-q-main { flex: 1 1 auto; min-width: 0; font-size: 18px; line-height: 1.5; color: #253247; }
         .exam-q-prefix { font-weight: 800; color: #183153; }
-        .exam-q-compact .exam-q-text { font-weight: 400; color: #253247; }
+        .exam-q-compact .exam-q-text { font-weight: 500; color: #253247; font-size: 18px !important; }
         .exam-q-compact .exam-q-pts { flex: 0 0 auto; font-size: 14px; color: #64748b; white-space: nowrap; }
         
         .exam-q-compact .exam-q-img { width: 100% !important; max-width: 100%; height: auto; max-height: 350px; object-fit: contain; display: block; margin-top: 10px; }
