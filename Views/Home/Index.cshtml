@@ -2,61 +2,91 @@
     ViewData["Title"] = "Trang chủ";
 }
 <style>
-    .scroll-box {
-        width: 60%;
-        height: calc(100vh - 200px);
-        background: white;
-        border: 1px solid #ccc;
-        padding: 20px;
-        margin-top: 50px;
-        overflow: auto;
-        scroll-behavior:smooth;scrollbar-width:none;
-        box-shadow: 2px 4px 8px 4px #51a34755;
-        box-sizing: border-box;
-    }
-
-    .table-wrapper {
-        max-height: calc(100vh - 360px); /* chiều cao phần tbody có thể scroll */
-        overflow-y: auto;
-        scrollbar-width: none;
-    }
-
-    .scrollbar-width-none {
-        scrollbar-width: none;
-    }
-
-    table {
+    /* 1. Vùng bao ngoài (Chỉ để căn giữa, không có nền) */
+    .main-background {
+        height: calc(100vh - 60px); 
         width: 100%;
-        border-collapse: collapse;
-    }
-
-    thead th {
-        position: sticky;
-        top: 0;
-        background: #198754; /* Bootstrap success */
-        color: white;
-        z-index: 1;
-    }
-
-    tbody tr:nth-child(even) {
-        background-color: #f9f9f9;
-    }
-
-    th, td {
-        padding: 1.2rem !important;
-        text-align: left;
-        white-space: nowrap;
-    }
-
-    .box-dethi {
-        margin: 0 auto;
-        width: 100%;
-        background: white;
-        border: 1px solid #ccc;
-        padding: 20px;
+        margin: 0; 
+        padding: 0;
         overflow: hidden;
-        box-shadow: 1px 1px 2px 1px #51a34755;
-        box-sizing: border-box;
+        display: flex; 
+        justify-content: center; 
+        align-items: center;
+        background-color: transparent; 
+    }
+
+    /* 2. Khung ảnh nền */
+    .content-box {
+        width: 60%; 
+        height: calc(100vh - 200px); 
+        max-width: none; 
+        padding: 40px 20px;
+        
+        /* ẢNH NỀN */
+        background-image: url('/images/nen.png');
+        background-size: 100% 100%; 
+        background-position: center;
+        background-repeat: no-repeat;
+        
+        filter: drop-shadow(4px 8px 15px rgba(0, 0, 0, 0.15));
+        
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* 3. Hình nhân vật Buddy */
+    .buddy-img {
+        max-width: 320px; 
+        height: auto;
+        margin-bottom: 25px; 
+        border-radius: 20px; 
+        /* Lệnh gọi animation */
+        animation: float-buddy 3s ease-in-out infinite; 
+    }
+
+    @@keyframes float-buddy {
+        0% { transform: translateY(0px); }
+        50% { transform: translateY(-15px); } 
+        100% { transform: translateY(0px); }
+    }
+
+    /* 4. CSS cho nút ảnh (Đã thêm định dạng chữ) */
+    .btn-start-quiz-img {
+        background-image: url('/images/nut.png');
+        background-size: 100% 100%;
+        background-repeat: no-repeat;
+        background-color: transparent;
+        width: 280px; 
+        height: 75px;
+        border: none;
+        transition: transform 0.2s ease, filter 0.2s ease;
+        cursor: pointer;
+
+        /* Chữ cho nút */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white !important; 
+        font-size: 1.6rem; 
+        font-weight: 800; 
+        text-transform: uppercase;
+        text-decoration: none; 
+        letter-spacing: 1px; 
+        text-shadow: 1px 2px 4px rgba(0,0,0,0.3); 
+
+    .btn-start-quiz-img:hover {
+        transform: scale(1.05); 
+        filter: brightness(1.1); 
+        color: white; 
+    }
+    
+    /* Responsive cho màn hình điện thoại */
+    @@media (max-width: 768px) {
+        .content-box { width: 95%; min-height: 350px; padding: 30px 15px; }
+        .buddy-img { max-width: 140px; margin-bottom: 20px; }
+        .btn-start-quiz-img { width: 220px; height: 60px; }
     }
 </style>
 
@@ -77,13 +107,13 @@
         </a>
     </div>
 </div>
-<div style=" height: 100%;margin: auto; padding: 0;overflow: hidden;display: flex; justify-content: center; align-items: center;background-color: #f0f0f000; ">
-    <div class="scroll-box text-center">
-        <p class="mt-3">Ứng dụng trắc nghiệm đánh giá năng lực cho trẻ, giúp phát triển các kỹ năng quan trọng để đánh giá sự tập trung ghi nhớ và phản xạ. Các bài kiểm tra được thiết kế để thúc đẩy sự phát triển tư duy và khả năng ghi nhớ của trẻ một cách hiệu quả và thú vị.</p>
-        <a class="btn btn-lg btn-success mt-3 rounded-2 btn-animation" href="/bai-kiem-tra">
-            Bắt đầu làm bài
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-narrow-right-dashed"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M5 12h.5m3 0h1.5m3 0h6" /><path d="M15 16l4 -4" /><path d="M15 8l4 4" /></svg>
-        </a>
+<div class="main-background">
+    <div class="content-box">
+        
+        <img src="/images/Buddy-start.png" alt="Buddy Chào mừng" class="buddy-img" />
+
+        <a class="btn-start-quiz-img" href="/bai-kiem-tra">BẮT ĐẦU LÀM BÀI</a>
+        
     </div>
 </div>
 @section Scripts {
