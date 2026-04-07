@@ -4,7 +4,7 @@
 <style>
     /* 1. Vùng bao ngoài (Chỉ để căn giữa, không có nền) */
     .main-background {
-        height: calc(100vh - 60px); 
+        height: calc(100vh - 80px); 
         width: 100%;
         margin: 0; 
         padding: 0;
@@ -17,9 +17,9 @@
 
     /* 2. Khung ảnh nền */
     .content-box {
-        width: 60%; 
-        height: calc(100vh - 200px); 
-        max-width: none; 
+        width: 95vw; 
+        height: calc(100vh - 120px); 
+        max-width: 1000px; 
         padding: 40px 20px;
         
         /* ẢNH NỀN */
@@ -58,7 +58,7 @@
         background-size: 100% 100%;
         background-repeat: no-repeat;
         background-color: transparent;
-        width: 280px; 
+        width: 300px; 
         height: 75px;
         border: none;
         transition: transform 0.2s ease, filter 0.2s ease;
@@ -68,14 +68,13 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        color: white !important; 
+        color: black !important; 
         font-size: 1.6rem; 
         font-weight: 800; 
-        text-transform: uppercase;
         text-decoration: none; 
         letter-spacing: 1px; 
-        text-shadow: 1px 2px 4px rgba(0,0,0,0.3); 
-
+    }
+    
     .btn-start-quiz-img:hover {
         transform: scale(1.05); 
         filter: brightness(1.1); 
@@ -112,7 +111,7 @@
         
         <img src="/images/Buddy-start.png" alt="Buddy Chào mừng" class="buddy-img" />
 
-        <a class="btn-start-quiz-img" href="/bai-kiem-tra">BẮT ĐẦU LÀM BÀI</a>
+        <a class="btn-start-quiz-img" href="/bai-kiem-tra">Bắt đầu làm bài</a>
         
     </div>
 </div>

@@ -6,11 +6,13 @@
     .scroll-box {
         width: 60%;
         max-width: 960px;
-        height: calc(100vh - 150px);
+        height: calc(100vh - 140px); 
         background: white;
         border: 1px solid #ccc;
         padding: 12px 20px 20px 20px;
-        margin-top: 20px;
+        
+        margin: 0 !important; 
+        
         overflow: auto;
         scroll-behavior: smooth;
         scrollbar-width: none;
@@ -178,6 +180,99 @@
             min-width: 112px;
         }
     }
+    /* =========================================
+       CSS CHO GIAO DIỆN KẾT THÚC
+       ========================================= */
+    
+    /* 1. Vô hiệu hóa khung trắng của bài thi khi hiện kết quả */
+    .scroll-box:has(#result:not(.d-none)) {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        overflow: visible !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 100% !important;  
+        max-width: 1600px !important; 
+        height: calc(100vh - 80px) !important; 
+    }
+
+    #display-container:has(#result:not(.d-none)) {
+        overflow: visible !important;
+    }
+
+    /* 3. Khung nền xanh */
+    .result-bg-box {
+        width: 95vw; 
+        max-width: 1000px; /* Chỉnh bề ngang khung hình nền */
+        height: calc(100vh - 120px); 
+        
+        position: relative;
+        left: 50%;
+        transform: translateX(-50%);
+        
+        background-image: url('/images/nen.png');
+        background-size: 100% 100%;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-color: transparent;
+        filter: drop-shadow(4px 8px 15px rgba(0, 0, 0, 0.15));
+        
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* 4. Buddy kết thúc (Phóng to theo yêu cầu) */
+    .buddy-img-result {
+        max-width: 420px; 
+        height: auto;
+        margin-bottom: 20px;
+        animation: float-buddy-result 3s ease-in-out infinite;
+    }
+
+    @@keyframes float-buddy-result {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-15px); }
+    }
+
+    /* 5. Nút bấm (Căn chỉnh khoảng cách) */
+    .btn-custom-img {
+        background-image: url('/images/nut.png');
+        background-size: 100% 100%;
+        background-repeat: no-repeat;
+        background-color: transparent;
+        width: 320px; 
+        height: 75px;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: black !important;
+        font-size: 1.4rem;
+        font-weight: 800;
+        text-decoration: none;
+        transition: transform 0.2s;
+        letter-spacing: 1px; 
+    }
+
+    .btn-custom-img:hover {
+        transform: scale(1.05);
+        filter: brightness(1.1); 
+        color: white;
+    }
+
+    .main-container-wrapper {
+        height: calc(100vh - 80px) !important; 
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        background-color: transparent;
+        overflow: visible !important; 
+    }
 </style>
 <div class="d-flex align-items-center mb-2 sticky-top" style="background:#51a347;padding:10px 30px;z-index:1;">
     <div class="flex-shrink-0">
@@ -199,7 +294,7 @@
         </a>
     </div>
 </div>
-<div style=" height: 100%;margin: auto; padding: 0;overflow: auto;scroll-behavior:smooth;scrollbar-width:none;display: flex; justify-content: center; align-items: center;background-color: #f0f0f000;">
+<div class="main-container-wrapper">
     <div class="scroll-box">
         <div id="header-question" class="mb-3 sticky-top" style="width:100%;border-bottom:1px dashed #dadada; padding-bottom:6px; background:#fff;">
             <div class="quiz-header-row">
@@ -237,15 +332,21 @@
                 <audio id="audio-player" class="d-none"></audio>
             </div>
             <div class="text-center d-none" id="result">
-                <img src="/images/chucmung.png" alt="" width="20%" height="auto" />
-                <h5 class="mt-2">Chúc mừng!</h5>
-                <p class="mb-2">Con đã hoàn thành bài kiểm tra năng lực.</p>
-                <p id="totalTimeLabel" class="mb-3 text-muted"></p>
-                <div class="d-flex flex-wrap justify-content-center gap-2 mb-3">
-                    <button type="button" id="btn-show-review" class="btn btn-lg btn-outline-primary" data-bs-toggle="modal" data-bs-target="#reviewModal">
-                        Xem lại câu trả lời
-                    </button>
-                    <button type="button" id="btn-restart" class="btn btn-lg btn-success btn-animation">Làm lại bài kiểm tra</button>
+                <div class="result-bg-box">
+                    
+                    <img src="/images/Buddy-end.png" alt="Chúc mừng" class="buddy-img-result" />
+
+                    <p id="totalTimeLabel" class="mb-4 fw-bold fs-5" style="color: black !important;"></p>
+                    
+                    <div class="d-flex flex-wrap justify-content-center gap-3">
+                        <button type="button" id="btn-show-review" class="btn-custom-img" data-bs-toggle="modal" data-bs-target="#reviewModal">
+                            Xem lại câu trả lời
+                        </button>
+                        
+                        <button type="button" id="btn-restart" class="btn-custom-img">
+                            Làm lại bài kiểm tra
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
