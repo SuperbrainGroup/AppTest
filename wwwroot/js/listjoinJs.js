@@ -131,16 +131,18 @@ $(document).ready(function () {
 
     function printResultForStudent(studentId) {
         if (!window.AppStudentPrint) {
-            showNotification("Thiếu studentPrintShared.js.");
+            showNotification("Lỗi: Thiếu thư viện studentPrintShared.js.");
             return;
         }
+
         const cfg = window.studentOverviewConfig || {};
         const resultUrl = cfg.resultDetailUrl || "/Teacher/LoadResultTestById";
         const radarUrl = cfg.radarChartUrl || "/GetRadarChartData";
+
         lastRadarCategories = [];
         lastRadarChartData = [];
-        currentResultStudent = { ...(studentDirectory[studentId] || {}), id: studentId };
         currentResultDetail = null;
+
         showNotification("Đang chuẩn bị bản in...");
         $.ajax({
             url: resultUrl,
@@ -157,7 +159,12 @@ $(document).ready(function () {
                     id: studentId
                 };
                 currentResultDetail = rDetail;
-                $.ajax({ url: radarUrl, type: "GET", data: { studentId: studentId } }).done(function (rRadar) {
+
+                $.ajax({ 
+                    url: radarUrl, 
+                    type: "GET", 
+                    data: { studentId: studentId } 
+                }).done(function (rRadar) {
                     if (rRadar && rRadar.categories && rRadar.chartData) {
                         lastRadarCategories = rRadar.categories;
                         lastRadarChartData = rRadar.chartData;
@@ -165,12 +172,10 @@ $(document).ready(function () {
                     } else {
                         lastRadarCategories = [];
                         lastRadarChartData = [];
-                        if (radarChartInstance) {
-                            radarChartInstance.dispose();
-                        }
+                        if (radarChartInstance) radarChartInstance.dispose();
                         radarChartInstance = null;
                     }
-                    const tableParts = window.AppStudentPrint.buildResultTableParts(lastRadarCategories, lastRadarChartData);
+
                     const detailHtml = currentResultDetail.description
                         ? currentResultDetail.description
                         : "<p>Hiện chưa có nhận xét chi tiết cho học viên này.</p>";
@@ -184,17 +189,15 @@ $(document).ready(function () {
                             "In Kết Quả",
                             window.AppStudentPrint.buildResultPrintHtml({
                                 student: currentResultStudent,
+                                categories: lastRadarCategories,
+                                chartData: lastRadarChartData,
                                 detailHtml: detailHtml,
-                                tableHeadHtml: tableParts.head,
-                                tableBodyHtml: tableParts.body,
                                 radarImg: radarImg,
-                                columnImg: "",
-                                lastRadarCategories: lastRadarCategories,
-                                lastRadarChartData: lastRadarChartData,
                                 cfg: cfg
                             })
                         );
                     }, 450);
+
                 }).fail(function () {
                     showNotification("Không thể tải biểu đồ để in.");
                 });

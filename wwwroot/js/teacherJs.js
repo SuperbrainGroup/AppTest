@@ -284,12 +284,12 @@ $(document).ready(function () {
                             window.AppStudentPrint.buildResultPrintHtml({
                                 student: currentResultStudent,
                                 detailHtml: detailHtml,
-                                tableHeadHtml: tableParts.head,
-                                tableBodyHtml: tableParts.body,
+                                // tableHeadHtml: tableParts.head,
+                                // tableBodyHtml: tableParts.body,
                                 radarImg: radarImg,
                                 columnImg: "",
-                                lastRadarCategories: lastRadarCategories,
-                                lastRadarChartData: lastRadarChartData,
+                                categories: lastRadarCategories,
+                                chartData: lastRadarChartData,
                                 cfg: cfg
                             })
                         );
@@ -332,23 +332,33 @@ $(document).ready(function () {
                 textStyle: {
                     fontFamily: '"Nunito Sans", sans-serif',
                     fontSize: 12,
-                    color: "#253247"
+                    color: "#318C41"
                 }
             },
             radar: {
-                radius: "62%",
+                radius: "75%",
                 indicator: categoryNames.map(name => ({
                     name: name,
                     max: 100
                 })),
                 splitArea: {
                     areaStyle: {
-                        color: ["#fbfcfe", "#f5f8fc", "#eef3f9", "#e7eef7", "#dfe8f4"]
+                        color: ["#f8fbf8", "#f1f7f0", "#e9f3e8", "#e2efe1", "#daebda"]
+                    }
+                },
+                axisLine: {
+                    lineStyle: {
+                        color: "#00783c74"
                     }
                 },
                 axisName: {
-                    color: "#253247",
+                    color: "#318C41",
                     fontSize: 12
+                },
+                splitLine: {
+                    lineStyle: {
+                        color: "rgba(0, 120, 60, 0.05)"
+                    }
                 }
             },
             series: [{
@@ -356,14 +366,14 @@ $(document).ready(function () {
                 type: "radar",
                 data: seriesData,
                 itemStyle: {
-                    color: "#1e4d7a"
-                },
-                areaStyle: {
-                    color: "rgba(30, 77, 122, 0.38)"
+                    color: "#00783C" // Màu xanh lá của các điểm mốc và chú thích (Legend)
                 },
                 lineStyle: {
                     width: 2,
-                    color: "#183153"
+                    color: "#00783C" // Màu xanh lá đậm cho đường viền biểu đồ
+                },
+                areaStyle: {
+                    color: "rgba(106, 189, 69, 0.01)" // Màu xanh lá nhạt tô bên trong (độ trong suốt 0.2)
                 }
             }]
         });

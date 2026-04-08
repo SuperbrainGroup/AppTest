@@ -215,14 +215,48 @@
     }
 
     function buildResultPrintHtml(state) {
+        const s = state.student || {};
+        const categories = state.categories || [];
+        const chartData = state.chartData || [];
         const detailHtml = state.detailHtml || "<p>Hiện chưa có nhận xét chi tiết cho học viên này.</p>";
         const radarImg = state.radarImg || "";
+
+        const tableParts = buildResultTableParts(categories, chartData);
+        
         return `
             <div class="print-report print-wireframe result-print-a4 exam-paper">
-                <div class="wf-radar-wrap result-radar-print">
-                    ${radarImg ? `<img src="${radarImg}" class="wf-radar-img" alt="Biểu đồ radar" />` : `<p class="wireframe-muted">Chưa có dữ liệu biểu đồ.</p>`}
+                <div class="exam-print-top">
+                    <div class="exam-print-title">PHIẾU ĐÁNH GIÁ NĂNG LỰC</div>
+                    <div class="exam-student-row-3">
+                        <div><span class="exam-info-lbl">Họ và tên</span><strong>${escapeHtml(safeValue(s.ten))}</strong></div>
+                        <div><span class="exam-info-lbl">Ngày sinh</span><strong>${escapeHtml(formatDateVi(s.ngaysinh))}</strong></div>
+                        <div><span class="exam-info-lbl">Tên đăng nhập</span><strong>${escapeHtml(safeValue(s.userLog))}</strong></div>
+                    </div>
                 </div>
-                <div class="wf-quote wf-quote-print">${detailHtml}</div>
+
+                <div class="report-section">
+                    <div class="report-section-title">Kết quả qua các lần kiểm tra</div>
+                    <div class="result-table-wrap">
+                        <table>
+                            <thead>${tableParts.head}</thead>
+                            <tbody>${tableParts.body}</tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="report-section">
+                    <div class="report-section-title">Nhận xét</div>
+                    <div class="report-note">
+                        ${detailHtml}
+                    </div>
+                </div>
+
+                <div class="report-section">
+                    <div class="report-section-title">Sơ đồ năng lực</div>
+                    <div class="result-radar-print">
+                        ${radarImg ? `<img src="${radarImg}" class="wf-radar-img" alt="Biểu đồ radar" />` : `<p class="wireframe-muted">Chưa có dữ liệu biểu đồ.</p>`}
+                    </div>
+                </div>
             </div>
         `;
     }
@@ -271,35 +305,73 @@
     const PRINT_STYLES_A4 = `
         @page { size: A4; margin: 0; } 
         
+        /* KHUNG TRANG: */
         .print-wireframe.exam-print-a4,
-        .print-wireframe.result-print-a4 { border: none !important; border-radius: 0; padding: 10mm 15mm !important; }
+        .print-wireframe.result-print-a4 { 
+            border: none !important; 
+            padding: 10mm 12mm !important; 
+            background: #fff !important;
+        }
         
-        .result-radar-print { text-align: center; padding: 0; page-break-after: avoid; }
-        .result-print-a4 .wf-radar-img { max-height: 118mm !important; width: auto; max-width: 100%; }
-        .wf-quote-print { margin-top: 4px; font-size: 14px; line-height: 1.5; padding: 6px 8px; overflow: hidden; }
+        /* =========================================
+           PHẦN KẾT QUẢ
+           ========================================= */
+        .report-section-title { 
+            display: flex !important; align-items: center !important; gap: 10px !important;
+            margin: 20px 0 15px 0 !important;
+            font-size: 16px !important; /* Khớp .exam-section-title */
+            font-weight: 800 !important; 
+            text-transform: uppercase !important; 
+            color: #183153 !important; 
+        }
+        .report-section-title::before { content: ""; width: 22px; height: 2px; background: #315a8a; flex: 0 0 auto; }
 
-        /* --- GIAO DIỆN ĐỀ THI --- */
+        /* Bảng điểm */
+        .result-table-wrap { border: 1px solid #dee2e6 !important; border-radius: 8px !important; overflow: hidden !important; margin-bottom: 20px !important; }
+        .result-table-wrap table { width: 100% !important; border-collapse: collapse !important; }
+        .result-table-wrap th { 
+            background: #198754 !important; color: white !important; 
+            padding: 12px 8px !important; 
+            font-size: 14px !important; 
+            font-weight: 700 !important; 
+            border: 1px solid #146c43 !important; 
+        }
+        .result-table-wrap td { 
+            border: 1px solid #dee2e6 !important; padding: 10px 8px !important; 
+            font-size: 14px !important; 
+            text-align: center !important; 
+        }
+
+        /* Nhận xét */
+        .report-note { 
+            border: 1px solid #d7deea !important; border-radius: 12px !important; 
+            background: #fcfdff !important; padding: 15px 20px !important; 
+            font-size: 18px !important; 
+            line-height: 1.5 !important; 
+            color: #253247 !important; 
+        }
+        
+        .result-radar-print { text-align: center !important; padding: 15px 0 !important; }
+        .result-print-a4 .wf-radar-img { max-height: 95mm !important; width: auto; max-width: 100%; object-fit: contain; }
+
+        /* =========================================
+           PHẦN ĐỀ THI
+           ========================================= */
         .exam-print-layout { display: block; box-sizing: border-box; } 
         .exam-print-top { margin-bottom: 20px; }
         .exam-print-title { text-align: center; font-size: 24px; font-weight: 800; color: #183153; margin-bottom: 15px; letter-spacing: 0.5px; }
-        
         .exam-student-row-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 15px; font-size: 14px; margin-bottom: 20px; }
         .exam-student-row-3 > div { border: 1px solid #e2e8f0; padding: 10px 12px; border-radius: 6px; background: #f8fafc; }
         .exam-info-lbl { display: block; font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 4px; }
-        
         .exam-print-a4 .exam-section-title { font-size: 16px; margin: 10px 0 15px 0; font-weight: 800; color: #183153; text-transform: uppercase; }
-
         .exam-q-compact-wrap { display: flex; flex-direction: column; gap: 15px; }
         .exam-q-compact { border: 1px solid #e5e7eb; padding: 15px; border-radius: 8px; background: #fcfdff; page-break-inside: avoid; }
         .exam-q-line { display: flex; flex-direction: row; align-items: baseline; justify-content: space-between; gap: 10px; }
-        
         .exam-q-main { flex: 1 1 auto; min-width: 0; font-size: 18px; line-height: 1.5; color: #253247; }
         .exam-q-prefix { font-weight: 800; color: #183153; }
         .exam-q-compact .exam-q-text { font-weight: 500; color: #253247; font-size: 18px !important; }
         .exam-q-compact .exam-q-pts { flex: 0 0 auto; font-size: 14px; color: #64748b; white-space: nowrap; }
-        
         .exam-q-compact .exam-q-img { width: 100% !important; max-width: 100%; height: auto; max-height: 350px; object-fit: contain; display: block; margin-top: 10px; }
-        
         .exam-print-a4 .exam-footer-note { padding-top: 15px; margin-top: 30px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #94a3b8; text-align: center; }
     `;
 
