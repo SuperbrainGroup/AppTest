@@ -53,7 +53,7 @@ namespace AppTest.Controllers
         }
         [HttpGet]
         [Route("GetListStudents")]
-        public async Task<IActionResult> GetStudents(int limit, int offset, string search)
+        public async Task<IActionResult> GetStudents(int limit, int offset, string search, string? fromDate, string? toDate)
         {
             MD5Hash md5 = new MD5Hash();
             int userId = _checkUser.GetUserId();
@@ -73,6 +73,10 @@ namespace AppTest.Controllers
                 PropertyNameCaseInsensitive = true
             });
             var listStudent = new List<StudentWithTestStatus>();
+
+            DateTime? fDate = string.IsNullOrEmpty(fromDate) ? null : DateTime.Parse(fromDate);
+            DateTime? tDate = string.IsNullOrEmpty(toDate) ? null : DateTime.Parse(toDate).AddDays(1).AddSeconds(-1);
+
             foreach (var s in students)
             {
                 var stu = new StudentWithTestStatus()
@@ -84,14 +88,19 @@ namespace AppTest.Controllers
                     namsinh = s.namsinh,
                     dienthoai = s.phhS_dienthoai
                 };
+                
                 var result = _context.UserTests.Where(x => x.UserId == s.id && x.IsComplete == true);
                 if (result.Any())
                 {
                     stu.HasTestResult = true;
                     stu.NumberTest = result.Count();
                     stu.DateTest = result.OrderByDescending(x => x.Id).FirstOrDefault().DateCreate;
+                    listStudent.Add(stu);
                 }
-                listStudent.Add(stu);
+                else if (!fDate.HasValue && !tDate.HasValue)
+                {
+                    listStudent.Add(stu);
+                }
             }
             if (students == null) return Ok(new { success = true, message = "không thấy danh sách", data = new List<StudentWithTestStatus>() });
 

@@ -83,6 +83,23 @@
         box-shadow: 1px 1px 2px 1px #51a34755;
         box-sizing: border-box;
     }
+
+    .date-input-custom {
+        position: relative;
+    }
+
+    .date-input-custom:not(.has-value):before {
+        content: attr(data-placeholder);
+        position: absolute;
+        left: 10px;
+        color: #aaa;
+        font-style: italic;
+        pointer-events: none;
+    }
+
+    .date-input-custom:not(.has-value)::-webkit-datetime-edit-fields-wrapper {
+        visibility: hidden !important;
+    }
 </style>
 <div class="d-flex align-items-center mb-2 sticky-top" style="background:#51a347;padding:10px 30px;z-index:1;">
     <div class="flex-shrink-0">
@@ -103,9 +120,29 @@
 </div>
 <div style=" height: 100%;margin: auto; padding: 0;overflow: hidden;display: flex; justify-content: center; align-items: center;background-color: #f0f0f000; ">
     <div class="scroll-box">
-        <div class="d-flex justify-content-between mb-3" style="width:100%;">
-            <input type="text" id="searchInput" class="form-control w-25" placeholder="Tìm kiếm học viên...">
-            <span class="text-success"><i class="ti ti-filter"></i><span id="counts"></span> học viên</span>
+        <div class="d-flex justify-content-between mb-3 align-items-center" style="width:100%; gap: 15px;">
+            <div class="d-flex align-items-center gap-3 flex-grow-1">
+                <input type="text" id="searchInput" class="form-control" style="width: 200px;" placeholder="Tìm tên học viên...">
+                
+                <div class="d-flex align-items-center gap-1">
+                    <label for="fromDate" class="mb-0 fw-bold small text-nowrap">Từ ngày:</label>
+                    <input type="date" id="fromDate" class="form-control form-control-sm date-input-custom" 
+                        data-placeholder="Chọn ngày" 
+                        onclick="this.showPicker()">
+                </div>
+
+                <div class="d-flex align-items-center gap-1">
+                    <label for="toDate" class="mb-0 fw-bold small text-nowrap">Đến ngày:</label>
+                    <input type="date" id="toDate" class="form-control form-control-sm date-input-custom" 
+                        data-placeholder="Chọn ngày" 
+                        onclick="this.showPicker()">
+                </div>
+
+                <button type="button" id="btnReset" class="btn btn-sm btn-outline-danger" title="Xóa lọc">
+                    <i class="ti ti-refresh"></i> Làm mới
+                </button>
+            </div>
+            <span class="text-success"><i class="ti ti-filter"></i> <span id="counts"></span> học viên</span>
         </div>
         <div class="table-wrapper">
             <table class="table table-striped table-hover table-responsive bg-white">

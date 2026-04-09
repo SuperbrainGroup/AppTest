@@ -22,7 +22,9 @@ $(document).ready(function () {
             data: {
                 limit: limit,
                 offset: (currentPage - 1) * limit,
-                search: $("#searchInput").val()
+                search: $("#searchInput").val(),
+                fromDate: $("#fromDate").val(),
+                toDate: $("#toDate").val()
             },
             success: function (response) {
                 if (response.success) {
@@ -232,6 +234,39 @@ $(document).ready(function () {
         });
     });
 
+    $("#fromDate, #toDate").on("change", function () {
+        currentPage = 1;
+        loadStudents();
+    });
+
+    $(document).on("click", "#btnReset", function () {
+        $("#fromDate, #toDate, #searchInput").val("");
+        syncDateInputs(); // MODIFIED HERE: Cập nhật trạng thái hiển thị
+        currentPage = 1;
+        loadStudents();
+    });
+
+    const handleDateChange = function() {
+        if (this.value) {
+            $(this).addClass('has-value');
+        } else {
+            $(this).removeClass('has-value');
+        }
+    };
+
+    $(document).on("change input", ".date-input-custom", handleDateChange);
+
+    function syncDateInputs() {
+        $(".date-input-custom").each(function() {
+            handleDateChange.call(this);
+        });
+    }
+
+    $(document).on("click", "input[type='date']", function() {
+        if (typeof this.showPicker === 'function') {
+            this.showPicker();
+        }
+    });
 });
 
 function debounce(func, delay) {
