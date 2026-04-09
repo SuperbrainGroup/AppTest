@@ -69,6 +69,8 @@ $(document).ready(function () {
                     let testDate = `<td class="text-center text-danger">-</td>`;
                     let btn = "";
 
+                    let btnDetail = `<button class="btn btn-sm btn-icon btn-outline-primary fs-10 btn_chitiet" data-id="${student.id}" style="margin-left:6px;"><i class="ti ti-list-details"></i> Chi tiết</button>`;
+
                     if (student.hasTestResult) {
                         testCount = `<td class="text-center"><span class="text-success">${student.numberTest}</span></td>`;
                         testDate = `<td class="text-center">${formatDateVi(student.dateTest)}</td>`;
@@ -88,6 +90,7 @@ $(document).ready(function () {
                                 <div class="action-buttons">
                                     <button class="btn btn-sm btn-icon btn-outline-dark fs-10 btn_indethi" data-id="${student.id}"><i class="ti ti-printer"></i> In đề</button>
                                     ${btn}
+                                    ${btnDetail}
                                 </div>
                             </td>
                         </tr>
@@ -128,6 +131,16 @@ $(document).ready(function () {
 
     $(document).on("click", ".btn_indethi", function () {
         window.AppStudentPrint.printExam($(this).data("id"));
+    });
+
+    $(document).on("click", ".btn_chitiet", function (e) {
+        // MODIFIED HERE: Xử lý chuyển hướng giống bên Giáo viên
+        const studentId = $(this).attr("data-id"); 
+        if (studentId) {
+            window.location.href = "/gv/xem-ket-qua?studentId=" + encodeURIComponent(studentId);
+        } else {
+            console.error("Không tìm thấy ID học viên");
+        }
     });
 });
 
