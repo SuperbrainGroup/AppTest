@@ -164,11 +164,12 @@ namespace AppTest.Services
                 Questions = questions
             };
         }
-
+        // Nhận xét từ admin
         public async Task<ResultDetailPayload> GetResultDetailPayloadAsync(int studentId)
         {
-            var user = await GetStudentProfileAsync(studentId) ?? throw new InvalidOperationException("Student not found.");
-            string description = $"<p class='fw-bolder mb-0'>Nhận xét chung:</p><p class='mb-0'>Xin chào <b>{user.ten}</b>, Dưới đây là kết quả bài kiểm tra năng lực về các kỹ năng:";
+            var user = await GetStudentProfileAsync(studentId) ?? throw new InvalidOperationException("Học viên không tồn tại.");
+            
+            // Lấy bài kiểm tra mới nhất đã hoàn thành (Khớp logic Controller)
             var userTest = await _context.UserTests
                 .Where(x => x.UserId == studentId && x.IsComplete == true)
                 .OrderByDescending(x => x.Id)
@@ -176,8 +177,11 @@ namespace AppTest.Services
 
             if (userTest == null)
             {
-                throw new InvalidOperationException("Không tìm thấy bài kiểm tra đã hoàn thành cho học viên này.");
+                throw new InvalidOperationException("Không tìm thấy bài kiểm tra đã hoàn thành.");
             }
+
+            // Tách riêng nhận xét cầm bút
+            string handwritingComment = userTest.GeneralComment ?? "";
 
             var categories = await _context.QuestionCategories
                 .Where(x => x.Enable == true)
@@ -185,7 +189,7 @@ namespace AppTest.Services
                 .ToListAsync();
 
             var categoryNames = categories.Select(c => c.Name ?? string.Empty).ToArray();
-
+            
             var allDetailsForSession = await _context.UserTestDetails
                 .Where(d => d.ResultId == userTest.Id)
                 .ToListAsync();
@@ -194,63 +198,57 @@ namespace AppTest.Services
             List<string> individualDescriptions = new();
             HashSet<int> categoriesWithPaperResults = new();
 
+            // 1. XỬ LÝ KẾT QUẢ TỪ BÀI THI GIẤY 
             var paperResults = await _context.questionResults
                 .Where(qr => qr.SessionId == userTest.Id)
                 .ToListAsync();
 
             var groupedPaperResults = paperResults.GroupBy(qr => qr.CategoryId)
-                .Select(g => new
-                {
+                .Select(g => new {
                     CategoryId = g.Key,
                     TotalEarned = g.Sum(x => x.PointEarned ?? 0),
                     TotalMax = g.Sum(x => x.MaxPoint ?? 0)
-                })
-                .ToList();
+                }).ToList();
 
             foreach (var paperResult in groupedPaperResults)
             {
                 int categoryIndex = categories.FindIndex(c => c.Id == paperResult.CategoryId);
-                if (categoryIndex == -1)
+                if (categoryIndex != -1)
                 {
-                    continue;
-                }
+                    double paperPercent = paperResult.TotalMax > 0 
+                        ? (double)paperResult.TotalEarned / paperResult.TotalMax * 100 
+                        : 0;
+                    paperPercent = Math.Min(100, Math.Max(0, paperPercent));
 
-                double paperPercent = paperResult.TotalMax > 0
-                    ? (double)paperResult.TotalEarned / paperResult.TotalMax * 100
-                    : 0;
-                paperPercent = Math.Min(100, Math.Max(0, paperPercent));
-                dataForChart[categoryIndex] = (int)Math.Round(paperPercent);
-                categoriesWithPaperResults.Add(paperResult.CategoryId ?? 0);
+                    dataForChart[categoryIndex] = (int)Math.Round(paperPercent);
+                    categoriesWithPaperResults.Add(paperResult.CategoryId ?? 0);
 
-                var res = await _context.categoryResultSettings
-                    .Where(x => x.FromPoint <= paperPercent && x.ToPoint >= paperPercent && x.CategoryId == paperResult.CategoryId)
-                    .FirstOrDefaultAsync();
+                    var res = await _context.categoryResultSettings
+                        .Where(x => x.FromPoint <= paperPercent && x.ToPoint >= paperPercent && x.CategoryId == paperResult.CategoryId)
+                        .FirstOrDefaultAsync();
 
-                if (res != null && !string.IsNullOrWhiteSpace(res.Description))
-                {
-                    var categoryName = categories.FirstOrDefault(c => c.Id == paperResult.CategoryId)?.Name ?? $"Category {paperResult.CategoryId}";
-                    individualDescriptions.Add($"<br><i class='ti ti-arrow-narrow-right'></i> {categoryName}: {res.Description}.");
+                    if (res != null && !string.IsNullOrWhiteSpace(res.Description))
+                    {
+                        var catName = categories.FirstOrDefault(c => c.Id == paperResult.CategoryId)?.Name ?? "Kỹ năng";
+                        // Format: • <b>Tên:</b> Nội dung
+                        individualDescriptions.Add($"• <b>{catName}:</b> {res.Description}.");
+                    }
                 }
             }
 
+            // 2. XỬ LÝ KẾT QUẢ ONLINE CHO CÁC KỸ NĂNG CÒN LẠI
             foreach (var category in categories)
             {
-                if (categoriesWithPaperResults.Contains(category.Id))
-                {
-                    continue;
-                }
+                if (categoriesWithPaperResults.Contains(category.Id)) continue;
 
                 int categoryIndex = categories.FindIndex(c => c.Id == category.Id);
-                if (categoryIndex == -1)
-                {
-                    continue;
-                }
-
                 var catDetails = allDetailsForSession.Where(d => d.CategoryId == category.Id).ToList();
+                
                 int earned = catDetails.Sum(d => d.PointEarned);
                 int total = catDetails.Sum(d => d.TotalPoint);
                 double finalCategoryPercent = total > 0 ? (double)earned / total * 100 : 0;
                 finalCategoryPercent = Math.Min(100, Math.Max(0, finalCategoryPercent));
+
                 dataForChart[categoryIndex] = (int)Math.Round(finalCategoryPercent);
 
                 var res = await _context.categoryResultSettings
@@ -259,13 +257,20 @@ namespace AppTest.Services
 
                 if (res != null && !string.IsNullOrWhiteSpace(res.Description))
                 {
-                    individualDescriptions.Add($"<i class='ti ti-arrow-narrow-right'></i> {category.Name}: {res.Description}.");
+                    individualDescriptions.Add($"• <b>{category.Name}:</b> {res.Description}.");
                 }
             }
 
-            description += individualDescriptions.Any()
-                ? string.Join("<br>", individualDescriptions)
-                : "<p>Hiện không có nhận xét chi tiết kết quả của học viên.</p>";
+            // 3. TẠO CHUỖI DESCRIPTION 
+            string finalDescription = "";
+            if (individualDescriptions.Any())
+            {
+                finalDescription = $"<div style='font-size:16px; line-height:1.5;'>" + string.Join("<br>", individualDescriptions) + "</div>";
+            }
+            else
+            {
+                finalDescription = "<div style='font-size:16px;'>Hiện không có nhận xét chi tiết kết quả của học viên.</div>";
+            }
 
             return new ResultDetailPayload
             {
@@ -273,7 +278,8 @@ namespace AppTest.Services
                 Student = user,
                 Categories = categoryNames,
                 Data = dataForChart,
-                Description = description
+                Description = finalDescription,
+                HandwritingComment = handwritingComment
             };
         }
 
@@ -464,6 +470,7 @@ namespace AppTest.Services
         public string[] Categories { get; set; } = Array.Empty<string>();
         public int[] Data { get; set; } = Array.Empty<int>();
         public string Description { get; set; } = string.Empty;
+        public string HandwritingComment { get; set; } = string.Empty;
     }
 
     public class RadarChartPayload

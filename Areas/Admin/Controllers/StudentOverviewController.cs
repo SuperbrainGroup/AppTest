@@ -61,7 +61,8 @@ namespace AppTest.Areas.Admin.Controllers
                     student = payload.Student,
                     data = payload.Data,
                     categories = payload.Categories,
-                    description = payload.Description
+                    description = payload.Description,
+                    handwritingComment = payload.HandwritingComment
                 });
             }
             catch (Exception ex)
