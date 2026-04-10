@@ -75,12 +75,12 @@ namespace AppTest.Areas.Admin.Controllers
         [Route("LoadListQuestion")]
         public async Task<IActionResult> GetQuestions(int categoryId,string searchString)
         {
-            if (categoryId == 0)
+            var question = _context.Questions.AsQueryable();
+
+            if (categoryId != 0)
             {
-                categoryId = 1;
+                question = question.Where(x => x.CategoryId == categoryId);
             }
-            var question = _context.Questions
-                .Where(x => x.CategoryId == categoryId).AsQueryable();
             if (!string.IsNullOrEmpty(searchString))
             {
                 question = question.Where(x => x.Name.Contains(searchString));
