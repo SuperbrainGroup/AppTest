@@ -125,6 +125,30 @@
         box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.3);
     }
 
+    #quiz-container:has(#questionImage:not(.d-none)) .answers-grid {
+        gap: 12px;
+        margin-top: 5px;
+    }
+
+    #quiz-container:has(#questionImage:not(.d-none)) .answer-item {
+        aspect-ratio: 3.5 / 1; 
+        height: 12vh;          
+        width: auto;           
+        min-width: 250px;
+        padding: 8px;
+    }
+
+    #quiz-container:has(#questionImage:not(.d-none)) .answer-item:first-child:nth-last-child(2),
+    #quiz-container:has(#questionImage:not(.d-none)) .answer-item:first-child:nth-last-child(2) ~ .answer-item {
+        width: 40vh;
+        height: 12vh;
+        aspect-ratio: 3 / 1;
+    }
+
+    #quiz-container:has(#questionImage:not(.d-none)) .answer-item img {
+        max-height: 90%; 
+        width: auto;
+    }
     .answer-item img {
         width: 100%;
         height: 100%;
@@ -132,14 +156,29 @@
         border-radius: 6px;
         margin: 0;
     }
+
     .answer-text {
         display: block;
-        font-size: 0.98rem;
-        line-height: 1.4;
+        line-height: 1.2;
         word-break: break-word;
+        text-align: center;
+        font-size: 1.8rem; 
+        font-weight: 700;
+        color: inherit;
     }
 
-    /* Header: giữ kích cỡ nút cố định dù câu hỏi dài */
+    .answer-item:has(img) .answer-text {
+        font-size: 1rem; 
+        font-weight: 600;
+        margin-bottom: 8px; 
+        flex: 0 0 auto;     
+    }
+
+    .answer-item:has(img) img {
+        flex: 1 1 auto;
+        max-height: calc(100% - 30px); 
+    }
+
     .quiz-header-row {
         display: flex;
         align-items: center;
