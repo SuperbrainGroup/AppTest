@@ -304,6 +304,10 @@ $(document).ready(function () {
 
     handleFormSubmit("#createQuestionForm", function (form, submitButton, originalText) {
         let formData = new FormData(form[0]);
+        const categoryName = $("#createCategoryId option:selected").text().trim();
+        if (categoryName === "Tự tin") {
+            formData.set("onPaper", "true");
+        }
         $.ajax({
             url: '/Admin/Question/SaveChange',
             type: "POST",

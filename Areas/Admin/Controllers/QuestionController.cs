@@ -127,7 +127,7 @@ namespace AppTest.Areas.Admin.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> SaveChange(int id, int categoryId, string name, int lop, int maxPoint, IFormFile image, IFormFile audio)
+        public async Task<IActionResult> SaveChange(int id, int categoryId, string name, int lop, int maxPoint, IFormFile image, IFormFile audio, bool onPaper) 
         {
             try
             {
@@ -139,7 +139,6 @@ namespace AppTest.Areas.Admin.Controllers
                 string imageUrl = null;
                 string audioUrl = null;
 
-                // Kiểm tra nếu có ảnh được tải lên
                 if (image != null && image.Length > 0)
                 {
                     var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads/answers");
@@ -159,7 +158,6 @@ namespace AppTest.Areas.Admin.Controllers
                     imageUrl = "/uploads/answers/" + uniqueFileName;
                 }
 
-                // Kiểm tra nếu có audio được tải lên
                 if (audio != null && audio.Length > 0)
                 {
                     var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads/audio/questions");
@@ -178,6 +176,7 @@ namespace AppTest.Areas.Admin.Controllers
 
                     audioUrl = "/uploads/audio/questions/" + uniqueFileName;
                 }
+
                 if (id == 0)
                 {
                     var question = new Question()
@@ -191,7 +190,7 @@ namespace AppTest.Areas.Admin.Controllers
                         DateCreate = DateTime.Now,
                         Image = imageUrl,
                         Audio = audioUrl,
-                        OnPaper = false
+                        OnPaper = onPaper 
                     };
                     _context.Questions.Add(question);
                     await _context.SaveChangesAsync();
@@ -209,6 +208,8 @@ namespace AppTest.Areas.Admin.Controllers
                     question.AgeGroup = null;
                     question.CategoryId = categoryId;
                     question.MaxPoint = maxPoint;
+                    question.OnPaper = onPaper; 
+
                     if (imageUrl != null)
                     {
                         question.Image = imageUrl;
