@@ -62,12 +62,13 @@
         padding: 16px 20px 20px 20px;
         box-sizing: border-box;
     }
-
+    /* MODIFIED: Lưới đáp án tự điều chỉnh kích thước */
     .answers-grid {
         display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 12px;
-        margin-top: 8px;
+        grid-template-columns: repeat(2, auto); 
+        gap: 25px; /* Tăng khoảng cách cho thoáng */
+        margin-top: 15px;
+        justify-content: center; 
     }
 
     @@media (max-width: 768px) {
@@ -75,53 +76,62 @@
             width: 100%;
             height: calc(100vh - 120px);
         }
-
         .answers-grid {
-            grid-template-columns: 1fr;
+            grid-template-columns: repeat(2, auto);
+            gap: 10px;
         }
     }
 
+    /* MODIFIED: Ô đáp án vuông - Mặc định cho trường hợp 4 đáp án */
     .answer-item {
         display: flex;
         flex-direction: column;
-        align-items: stretch;
+        align-items: center;
         justify-content: center;
-        width: 100%;
-        min-height: 72px;
-        border-radius: 10px;
+        aspect-ratio: 1 / 1; 
+        
+        /* Kích thước khi có 4 đáp án (2x2) */
+        width: 30vh; 
+        max-width: 42vw; 
+
+        border-radius: 15px;
         border: 1px solid #e2e8f0;
         background: #f9fafb;
-        padding: 10px 12px;
-        text-align: left;
-        font-size: 1rem;
+        padding: 12px;
         cursor: pointer;
-        transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease, box-shadow 0.1s ease;
-        outline: none;
+        transition: all 0.25s ease;
+        overflow: hidden;
+    }
+
+    /* MODIFIED HERE: Logic đặc biệt khi CHỈ CÓ 2 ĐÁP ÁN 
+       (Tự động phóng to khung hình vuông) */
+    .answer-item:first-child:nth-last-child(2),
+    .answer-item:first-child:nth-last-child(2) ~ .answer-item {
+        width: 42vh; /* Phóng to lên khoảng 1.5 lần so với mặc định */
+        max-width: 45vw;
     }
 
     .answer-item:hover {
         background: #ecfdf3;
         border-color: #4ade80;
-        box-shadow: 0 0 0 1px rgba(74, 222, 128, 0.5);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+        transform: translateY(-2px);
     }
 
     .answer-item.selected {
         background: #22c55e;
         border-color: #16a34a;
         color: #ffffff;
-        box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.55);
-        transform: translateY(-1px);
+        box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.3);
     }
 
     .answer-item img {
-        max-height: 160px;
-        height: auto;
         width: 100%;
-        object-fit: contain;
-        border-radius: 8px;
-        margin-top: 6px;
+        height: 100%;
+        object-fit: contain; 
+        border-radius: 6px;
+        margin: 0;
     }
-
     .answer-text {
         display: block;
         font-size: 0.98rem;
