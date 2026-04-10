@@ -7,7 +7,8 @@ namespace AppTest.Services
     public interface IStudentOverviewService
     {
         Task<User?> GetStudentProfileAsync(int userId);
-        Task<List<StudentWithTestStatus>> GetAllTestedStudentsAsync(string? search, int offset, int limit);
+        Task<User?> GetStaffProfileAsync(int userId);
+        Task<List<StudentWithTestStatus>> GetAllTestedStudentsAsync(int idChiNhanh, string? search, int offset, int limit);
         Task<PrintExamPayload> GetPrintExamPayloadAsync(int studentId);
         Task<ResultDetailPayload> GetResultDetailPayloadAsync(int studentId);
         Task<RadarChartPayload> GetRadarChartPayloadAsync(int studentId);
@@ -77,64 +78,70 @@ namespace AppTest.Services
             }
         }
 
-        public async Task<List<StudentWithTestStatus>> GetAllTestedStudentsAsync(string? search, int offset, int limit)
+        public async Task<User?> GetStaffProfileAsync(int userId)
         {
-            var latestTests = await _context.UserTests
-                .Where(x => x.IsComplete == true && x.UserId != null)
-                .GroupBy(x => x.UserId!.Value)
-                .Select(g => new
-                {
-                    UserId = g.Key,
-                    NumberTest = g.Count(),
-                    DateTest = g.Max(x => x.DateCreate)
-                })
-                .OrderByDescending(x => x.DateTest)
-                .ToListAsync();
+            string apiUrl = $"http://45.119.82.38:6969/api/Teachers/{userId}";
+            try
+            {
+                using var client = _httpClientFactory.CreateClient();
+                client.DefaultRequestHeaders.Add("accept", "application/json");
+                var response = await client.GetAsync(apiUrl);
+                if (!response.IsSuccessStatusCode) return null;
+
+                var responseData = await response.Content.ReadAsStringAsync();
+                var userJson = JsonConvert.DeserializeObject<UserDto>(responseData);
+                if (userJson == null) return null;
+
+                return new User { Id = userJson.id, idChiNhanh = userJson.idChiNhanh, ten = userJson.hoten };
+            }
+            catch { return null; }
+        }
+
+        // MODIFIED: Cập nhật chữ ký hàm thêm idChiNhanh và đổi logic sang Student-centric
+        public async Task<List<StudentWithTestStatus>> GetAllTestedStudentsAsync(int idChiNhanh, string? search, int offset, int limit)
+        {
+            // 1. Lấy danh sách học viên từ API theo chi nhánh
+            string apiUrl = $"http://45.119.82.38:6969/api/Students/GetStudentByChiNhanh/{idChiNhanh}?limit={limit}&offset={offset}&search={search ?? ""}";
+            
+            using var client = _httpClientFactory.CreateClient();
+            client.DefaultRequestHeaders.Add("accept", "application/json");
+
+            var response = await client.GetAsync(apiUrl);
+            if (!response.IsSuccessStatusCode) return new List<StudentWithTestStatus>();
+
+            var jsonString = await response.Content.ReadAsStringAsync();
+            var studentsApi = JsonConvert.DeserializeObject<List<StudentByTeacherDto>>(jsonString);
+
+            if (studentsApi == null) return new List<StudentWithTestStatus>();
 
             var enriched = new List<StudentWithTestStatus>();
-            foreach (var item in latestTests)
-            {
-                var student = await GetStudentProfileAsync(item.UserId);
-                if (student == null)
-                {
-                    continue;
-                }
 
-                DateTime.TryParse(student.ngaysinh, out var birthDate);
+            // 2. Duyệt danh sách từ API và kiểm tra bài test tại DB local
+            foreach (var s in studentsApi)
+            {
+                var testQuery = _context.UserTests
+                    .Where(x => x.UserId == s.id && x.IsComplete == true)
+                    .OrderByDescending(x => x.DateCreate);
+
+                var hasTest = await testQuery.AnyAsync();
+                
                 enriched.Add(new StudentWithTestStatus
                 {
-                    Id = student.Id,
-                    mahs = student.mahs,
-                    ten = student.ten ?? string.Empty,
-                    Email = student.Email ?? string.Empty,
-                    dienthoai = student.phhs_dienthoai ?? string.Empty,
-                    namsinh = birthDate,
-                    CourseName = student.courseName ?? string.Empty,
-                    HasTestResult = true,
-                    NumberTest = item.NumberTest,
-                    DateTest = item.DateTest
+                    Id = s.id,
+                    mahs = s.mahs,
+                    ten = s.ten ?? string.Empty,
+                    Email = s.email ?? string.Empty,
+                    dienthoai = s.phhS_dienthoai ?? string.Empty,
+                    namsinh = s.namsinh,
+                    HasTestResult = hasTest,
+                    NumberTest = hasTest ? await testQuery.CountAsync() : 0,
+                    DateTest = hasTest ? (await testQuery.FirstOrDefaultAsync())?.DateCreate : null
                 });
             }
 
-            if (!string.IsNullOrWhiteSpace(search))
-            {
-                string normalized = search.Trim().ToLowerInvariant();
-                enriched = enriched
-                    .Where(x =>
-                        (x.mahs ?? string.Empty).ToLowerInvariant().Contains(normalized) ||
-                        (x.ten ?? string.Empty).ToLowerInvariant().Contains(normalized) ||
-                        (x.Email ?? string.Empty).ToLowerInvariant().Contains(normalized) ||
-                        (x.dienthoai ?? string.Empty).ToLowerInvariant().Contains(normalized) ||
-                        (x.CourseName ?? string.Empty).ToLowerInvariant().Contains(normalized))
-                    .ToList();
-            }
-
-            return enriched
-                .Skip(Math.Max(offset, 0))
-                .Take(limit <= 0 ? 50 : limit)
-                .ToList();
+            return enriched;
         }
-
+        
         public async Task<PrintExamPayload> GetPrintExamPayloadAsync(int studentId)
         {
             var user = await GetStudentProfileAsync(studentId) ?? throw new InvalidOperationException("Student not found.");
