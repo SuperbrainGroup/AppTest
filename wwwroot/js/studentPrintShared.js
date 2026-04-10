@@ -227,7 +227,7 @@
         // Khung nhận xét cầm bút (chỉ hiện nếu có nội dung)
         const handwritingSection = handwritingComment ? `
             <div class="report-section">
-                <div class="report-section-title">Nhận xét phần cầm bút</div>
+                <div class="report-section-title">Đánh giá bổ sung</div>
                 <div class="report-note" style="font-size: 16px !important;">
                     ${handwritingComment}
                 </div>
