@@ -51,7 +51,7 @@ namespace AppTest.Services
                     return null;
                 }
 
-                int lop = Math.Clamp(student.lop, 1, 12);
+                int lop = Math.Clamp(student.lop, -2, 6);
                 return new User
                 {
                     Id = student.idhocvien,

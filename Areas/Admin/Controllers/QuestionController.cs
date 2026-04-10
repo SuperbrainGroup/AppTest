@@ -101,7 +101,11 @@ namespace AppTest.Areas.Admin.Controllers
                                     maxPoint = q.MaxPoint,
                                     ageGroup = q.AgeGroup,
                                     lop = q.Lop,
-                                    lopLabel = q.Lop != null ? $"Lớp {q.Lop}" : "Chưa chọn lớp",
+                                    lopLabel = q.Lop == -2 ? "Mầm" :
+                                                q.Lop == -1 ? "Chồi" :
+                                                q.Lop == 0 ? "Lá" :
+                                                q.Lop == 6 ? "Lớp 5+" :
+                                                q.Lop != null ? $"Lớp {q.Lop}" : "Chưa chọn lớp",
                                     ageText = q.AgeGroup != null ? AgeConvert.ageText((int)q.AgeGroup) : "-",
                                     ageColor = q.AgeGroup != null ? AgeConvert.ageColor((int)q.AgeGroup) : "#94a3b8",
                                     categoryName = q.Category != null ? q.Category.Name : "Unknow",
@@ -127,9 +131,9 @@ namespace AppTest.Areas.Admin.Controllers
         {
             try
             {
-                if (lop < 1 || lop > 12)
+                if (lop < -2 || lop > 6)
                 {
-                    return Json(new { success = false, message = "Lớp phải từ 1 đến 12." });
+                    return Json(new { success = false, message = "Danh mục lớp không hợp lệ (Mầm đến 5+)." });
                 }
 
                 string imageUrl = null;

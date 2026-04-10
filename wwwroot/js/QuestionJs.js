@@ -49,6 +49,16 @@ $(document).ready(function () {
                             return true; 
                         }
 
+                        let displayLop = "-";
+                        let lv = q.lop != null ? q.lop : q.Lop;
+                        if (lv !== null && lv !== undefined) {
+                            if (lv == -2) displayLop = "Mầm";
+                            else if (lv == -1) displayLop = "Chồi";
+                            else if (lv == 0) displayLop = "Lá";
+                            else if (lv == 6) displayLop = "Lớp 5+";
+                            else displayLop = "Lớp " + lv;
+                        }
+
                         displayCount++; 
                         let count = 0;
                         q.answers.forEach(() => count++);
@@ -108,7 +118,7 @@ $(document).ready(function () {
                                                     <div class="fw-semibold text-truncate" style="max-width:520px;">${q.name}</div>
                                                 </div>
                                                 <div class="small opacity-75 mt-1">
-                                                    <span class="me-3"><b>Lớp:</b> ${q.lopLabel || "-"}</span>
+                                                    <span class="me-3"><b>Lớp:</b> ${displayLop}</span>
                                                     <span class="me-3"><b>Điểm:</b> ${q.maxPoint}</span>
                                                     <span class="me-3">
                                                         <b>Danh mục:</b>
