@@ -72,10 +72,14 @@ namespace AppTest.Controllers
             {
                 PropertyNameCaseInsensitive = true
             });
+
             var listStudent = new List<StudentWithTestStatus>();
 
-            DateTime? fDate = string.IsNullOrEmpty(fromDate) ? null : DateTime.Parse(fromDate);
-            DateTime? tDate = string.IsNullOrEmpty(toDate) ? null : DateTime.Parse(toDate).AddDays(1).AddSeconds(-1);
+            var culture = new System.Globalization.CultureInfo("vi-VN");
+            DateTime? fDate = string.IsNullOrEmpty(fromDate) ? null : DateTime.Parse(fromDate, culture);
+            DateTime? tDate = string.IsNullOrEmpty(toDate) ? null : DateTime.Parse(toDate, culture).AddDays(1).AddSeconds(-1);
+
+            if (students == null) return Ok(new { success = true, message = "không thấy danh sách", data = new List<StudentWithTestStatus>() });
 
             foreach (var s in students)
             {
@@ -88,21 +92,31 @@ namespace AppTest.Controllers
                     namsinh = s.namsinh,
                     dienthoai = s.phhS_dienthoai
                 };
-                
-                var result = _context.UserTests.Where(x => x.UserId == s.id && x.IsComplete == true);
-                if (result.Any())
+
+                var resultQuery = _context.UserTests.Where(x => x.UserId == s.id && x.IsComplete == true);
+
+                if (fDate.HasValue)
+                {
+                    resultQuery = resultQuery.Where(x => x.DateCreate >= fDate.Value);
+                }
+                if (tDate.HasValue)
+                {
+                    resultQuery = resultQuery.Where(x => x.DateCreate <= tDate.Value);
+                }
+
+                if (resultQuery.Any())
                 {
                     stu.HasTestResult = true;
-                    stu.NumberTest = result.Count();
-                    stu.DateTest = result.OrderByDescending(x => x.Id).FirstOrDefault().DateCreate;
+                    stu.NumberTest = resultQuery.Count();
+                    stu.DateTest = resultQuery.OrderByDescending(x => x.Id).FirstOrDefault().DateCreate;
                     listStudent.Add(stu);
                 }
+              
                 else if (!fDate.HasValue && !tDate.HasValue)
                 {
                     listStudent.Add(stu);
                 }
             }
-            if (students == null) return Ok(new { success = true, message = "không thấy danh sách", data = new List<StudentWithTestStatus>() });
 
             return Ok(new { success = true, message = "đã lấy danh sách thành công", data = listStudent });
         }
