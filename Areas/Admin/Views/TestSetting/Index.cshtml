@@ -1,0 +1,138 @@
+@{
+    ViewData["Title"] = "Cài đặt hệ thống";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="d-flex align-items-center justify-content-between mb-4 mt-3">
+    <h4 class="fw-bold mb-0">Cài đặt hệ thống</h4>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0" style="border-radius: 14px;">
+            <div class="card-header bg-white fw-bold py-3">
+                <i class="ti ti-upload me-2 text-primary"></i>Tải lên ảnh nền mới
+            </div>
+            <div class="card-body">
+                <form id="uploadBgForm" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Chọn file ảnh</label>
+                        <input type="file" id="bgFileInput" name="file" class="form-control" accept=".jpg,.jpeg,.png" />
+                        <div class="form-text mt-2" style="font-size: 0.85rem; line-height: 1.4;">
+                            <span class="text-danger fw-bold">* Lưu ý:</span><br />
+                            - Kích thước tối ưu: **1920x1080px**<br />
+                            - Định dạng: **JPG, PNG**<br />
+                            - Dung lượng tối đa: **2MB**
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100" id="btnUpload">
+                        <i class="ti ti-cloud-upload me-1"></i> Tải lên
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <div class="card shadow-sm border-0" style="border-radius: 14px;">
+            <div class="card-header bg-white fw-bold py-3 d-flex justify-content-between align-items-center">
+                <span><i class="ti ti-photo me-2 text-success"></i>Thư viện ảnh nền</span>
+                <span class="badge bg-light text-dark fw-normal border">Đang sử dụng: <span id="activeName" class="text-primary fw-bold">...</span></span>
+            </div>
+            <div class="card-body">
+                <div id="bgGallery" class="row g-3">
+                    <div class="text-center py-5 text-muted">Đang tải thư viện...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .bg-item {
+        position: relative;
+        cursor: pointer;
+        border-radius: 10px;
+        overflow: hidden;
+        border: 3px solid transparent;
+        transition: all 0.2s;
+    }
+    .bg-item:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+    .bg-item.active { border-color: #198754; }
+    .bg-item img { height: 120px; width: 100%; object-fit: cover; }
+    .bg-item .check-icon {
+        position: absolute; top: 5px; right: 5px;
+        background: #198754; color: #fff;
+        width: 24px; height: 24px; border-radius: 50%;
+        display: none; align-items: center; justify-content: center;
+    }
+    .bg-item.active .check-icon { display: flex; }
+</style>
+
+@section Scripts {
+    <script>
+        const currentActive = "@ViewBag.CurrentBackground";
+
+        $(document).ready(function() {
+            loadGallery();
+
+            // Xử lý Upload
+            $("#uploadBgForm").submit(function(e) {
+                e.preventDefault();
+                let formData = new FormData(this);
+                $("#btnUpload").prop("disabled", true).text("Đang xử lý...");
+
+                $.ajax({
+                    url: '/Admin/TestSetting/UploadBackground',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(res) {
+                        if(res.success) {
+                            showNotification(res.message);
+                            $("#bgFileInput").val("");
+                            loadGallery();
+                        } else {
+                            showNotification(res.message);
+                        }
+                    },
+                    complete: function() {
+                        $("#btnUpload").prop("disabled", false).html('<i class="ti ti-cloud-upload me-1"></i> Tải lên');
+                    }
+                });
+            });
+        });
+
+        function loadGallery() {
+            $.get('/Admin/TestSetting/GetGallery', function(res) {
+                if(res.success) {
+                    let html = "";
+                    res.data.forEach(url => {
+                        const isActive = url === currentActive ? "active" : "";
+                        if(isActive) $("#activeName").text(url.split('/').pop());
+                        
+                        html += `
+                            <div class="col-md-3">
+                                <div class="bg-item ${isActive}" onclick="setActiveBackground('${url}')">
+                                    <img src="${url}" alt="background" />
+                                    <div class="check-icon"><i class="ti ti-check"></i></div>
+                                </div>
+                            </div>`;
+                    });
+                    $("#bgGallery").html(html || '<div class="text-center py-4">Chưa có ảnh nào trong thư viện.</div>');
+                }
+            });
+        }
+
+        function setActiveBackground(url) {
+            showConfirm("Bạn có muốn đổi ảnh nền giao diện học viên sang ảnh này?", function() {
+                $.post('/Admin/TestSetting/SetActiveBackground', { url: url }, function(res) {
+                    if(res.success) {
+                        location.reload();
+                    }
+                });
+            });
+        }
+    </script>
+}

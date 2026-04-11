@@ -38,29 +38,47 @@ namespace AppTest.Controllers
         {
             int userId = _checkUser.GetUserId();
             var user = await GetProfile(userId);
-            TempData["name"] = user.ten;
+            
+            if (user != null) TempData["name"] = user.ten; 
+
+            var bg = await _context.AppSettings.FirstOrDefaultAsync(x => x.SettingKey == "StudentBackground");
+            ViewBag.StudentBackground = bg?.SettingValue;
             return View();
         }
         [AllowAnonymous]
         [Route("dang-nhap")]
-        public IActionResult Login()
+        public async Task<IActionResult> Login()
         {
+            // MODIFIED HERE: Lấy ảnh nền từ DB gửi qua View
+            var bg = await _context.AppSettings.FirstOrDefaultAsync(x => x.SettingKey == "StudentBackground");
+            ViewBag.StudentBackground = bg?.SettingValue;
+            
             return View();
         }
+
         [Route("bai-kiem-tra")]
         public async Task<IActionResult> TestPage()
         {
             int userId = _checkUser.GetUserId();
             var user = await GetProfile(userId);
+
+            // MODIFIED HERE: Bảo vệ luồng dữ liệu
+            if (user == null) return RedirectToAction("Error");
             TempData["name"] = user.ten;
+
+            var bg = await _context.AppSettings.FirstOrDefaultAsync(x => x.SettingKey == "StudentBackground");
+            ViewBag.StudentBackground = bg?.SettingValue;
             return View();
         }
+
         [Route("Stats")]
         public async Task<IActionResult> Stats()
         {
             int userId = _checkUser.GetUserId();
             var user = await GetProfile(userId);
             TempData["name"] = user.ten;
+            var bg = await _context.AppSettings.FirstOrDefaultAsync(x => x.SettingKey == "StudentBackground");
+            ViewBag.StudentBackground = bg?.SettingValue;
             return View();
         }
         public IActionResult Privacy()
@@ -176,7 +194,7 @@ namespace AppTest.Controllers
             session.AgeGroup = lop;
             session.idChiNhanh = user.idChiNhanh;
             session.tenChiNhanh = user.tenChiNhanh;
-            _context.SaveChanges();
+            await _context.SaveChangesAsync(); 
             return Ok(new { success = true, sessionId = session.Id, lop, agegroup = lop });
         }
 

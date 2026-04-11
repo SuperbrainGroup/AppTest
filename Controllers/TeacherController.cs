@@ -47,8 +47,11 @@ namespace AppTest.Controllers
         }
         [Route("/gv/dang-nhap")]
         [AllowAnonymous]
-        public IActionResult Login()
+        public async Task<IActionResult> Login()
         {
+            var bg = await _context.AppSettings.FirstOrDefaultAsync(x => x.SettingKey == "StudentBackground");
+            ViewBag.StudentBackground = bg?.SettingValue;
+            
             return View();
         }
         [HttpGet]

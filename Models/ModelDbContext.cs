@@ -18,7 +18,7 @@ namespace AppTest.Models
         public DbSet<UserTestDetail> UserTestDetails { get; set; }
         public DbSet<CategoryResultSetting> categoryResultSettings { get; set; }
         public DbSet<QuestionResult> questionResults { get; set; }
-
+        public DbSet<AppSetting> AppSettings { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -46,6 +46,13 @@ namespace AppTest.Models
                 .HasForeignKey(a => a.QuestionId)
                 .OnDelete(DeleteBehavior.Cascade);  // Cho phép xóa cascade
         }
+    }
+    [Table("AppSetting")]
+    public class AppSetting
+    {
+        [Key]
+        public string SettingKey { get; set; }
+        public string? SettingValue { get; set; }
     }
     [Table("QuestionCategory")]
     public class QuestionCategory
