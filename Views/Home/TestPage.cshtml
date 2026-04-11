@@ -162,7 +162,7 @@
         line-height: 1.2;
         word-break: break-word;
         text-align: center;
-        font-size: 1.8rem; 
+        font-size: 3.8rem; 
         font-weight: 700;
         color: inherit;
     }
@@ -321,6 +321,42 @@
         align-items: center !important;
         background-color: transparent;
         overflow: visible !important; 
+    }
+
+    #reviewModal .table thead th, 
+    #reviewModal .table-light th { 
+        position: sticky;
+        top: 0;
+        background-color: #198754 !important;
+        color: #ffffff !important;
+        text-align: center;
+        border-color: #146c43 !important;
+        z-index: 2;
+        font-weight: 700;
+        padding: 12px 8px !important;
+    }
+
+    #review-table-body td:last-child,
+    #review-table-body td:last-child *,
+    #review-table-body .text-success,
+    #review-table-body .text-danger,
+    #review-table-body .text-muted {
+        color: #000000 !important; 
+        opacity: 1 !important;     
+        font-weight: 700 !important;
+        text-fill-color: #000000 !important;
+        -webkit-text-fill-color: #000000 !important;
+    }
+
+    #review-table-body td:nth-child(3),
+    #review-table-body td:last-child {
+        text-align: center !important;
+        vertical-align: middle !important;
+    }
+
+    #reviewModal .table thead th:nth-child(3),
+    #reviewModal .table thead th:last-child {
+        text-align: center !important;
     }
 </style>
 <div class="d-flex align-items-center mb-2 sticky-top" style="background:#51a347;padding:10px 30px;z-index:1;">
