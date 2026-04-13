@@ -53,7 +53,7 @@ namespace AppTest.Services
                     return null;
                 }
 
-                if (!LopMapper.TryConvertManagementLopToAppLop(student.lop, out int lop))
+                if (!LopMapper.TryNormalizeLopCode(student.lop, out int lop))
                 {
                     return null;
                 }
@@ -153,7 +153,7 @@ namespace AppTest.Services
             int lop = user.lop;
 
             var questions = await _context.Questions
-                .Where(q => q.OnPaper == true && q.Lop == lop)
+                .Where(q => q.OnPaper == true && (q.Lop == lop || q.Lop == lop - 3))
                 .OrderBy(q => q.CategoryId)
                 .Include(q => q.Category)
                 .Select(q => new PrintExamQuestion
@@ -162,8 +162,8 @@ namespace AppTest.Services
                     Name = q.Name,
                     CategoryId = q.CategoryId,
                     MaxPoint = q.MaxPoint,
-                    MaxPointCategory = _context.Questions.Where(x => x.CategoryId == q.CategoryId && x.Lop == lop).Sum(x => x.MaxPoint),
-                    AgeGroup = q.Lop,
+                    MaxPointCategory = _context.Questions.Where(x => x.CategoryId == q.CategoryId && (x.Lop == lop || x.Lop == lop - 3)).Sum(x => x.MaxPoint),
+                    AgeGroup = q.Lop >= -2 && q.Lop <= 6 ? q.Lop + 3 : q.Lop,
                     CategoryName = q.Category != null ? q.Category.Name : "Unknown",
                     HasImage = q.Image != null,
                     Image = q.Image

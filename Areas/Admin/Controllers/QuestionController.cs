@@ -32,7 +32,23 @@ namespace AppTest.Areas.Admin.Controllers
             {
                 return Json(new { success = false, message = "Không tìm thấy thông tin câu hỏi" });
             }
-            return Json(new {success=true, question=question});
+
+            return Json(new
+            {
+                success = true,
+                question = new
+                {
+                    question.Id,
+                    question.Name,
+                    question.CategoryId,
+                    question.DisplayOrder,
+                    question.MaxPoint,
+                    question.OnPaper,
+                    question.Image,
+                    question.Audio,
+                    lop = question.Lop >= -2 && question.Lop <= 6 ? question.Lop + 3 : question.Lop
+                }
+            });
         }
       
         [HttpPost]
@@ -87,7 +103,7 @@ namespace AppTest.Areas.Admin.Controllers
             }
 
             var questions = await question
-                                .OrderBy(x => x.Lop)
+                                .OrderBy(x => x.Lop >= -2 && x.Lop <= 6 ? x.Lop + 3 : x.Lop)
                                 .ThenBy(x => x.DisplayOrder)
                                 .ThenBy(x => x.Id)
                                 .Include(q => q.Answers)
@@ -102,12 +118,12 @@ namespace AppTest.Areas.Admin.Controllers
                                     Audio = q.Audio,
                                     maxPoint = q.MaxPoint,
                                     ageGroup = q.AgeGroup,
-                                    lop = q.Lop,
-                                    lopLabel = q.Lop == -2 ? "Mầm" :
-                                                q.Lop == -1 ? "Chồi" :
-                                                q.Lop == 0 ? "Lá" :
-                                                q.Lop == 6 ? "Lớp 5+" :
-                                                q.Lop != null ? $"Lớp {q.Lop}" : "Chưa chọn lớp",
+                                    lop = q.Lop >= -2 && q.Lop <= 6 ? q.Lop + 3 : q.Lop,
+                                    lopLabel = (q.Lop >= -2 && q.Lop <= 6 ? q.Lop + 3 : q.Lop) == 1 ? "Mầm" :
+                                               (q.Lop >= -2 && q.Lop <= 6 ? q.Lop + 3 : q.Lop) == 2 ? "Chồi" :
+                                               (q.Lop >= -2 && q.Lop <= 6 ? q.Lop + 3 : q.Lop) == 3 ? "Lá" :
+                                               (q.Lop >= -2 && q.Lop <= 6 ? q.Lop + 3 : q.Lop) == 9 ? "Lớp 5+" :
+                                               $"Lớp {(q.Lop >= -2 && q.Lop <= 6 ? q.Lop + 3 : q.Lop) - 3}",
                                     ageText = q.AgeGroup != null ? AgeConvert.ageText((int)q.AgeGroup) : "-",
                                     ageColor = q.AgeGroup != null ? AgeConvert.ageColor((int)q.AgeGroup) : "#94a3b8",
                                     categoryName = q.Category != null ? q.Category.Name : "Unknow",
@@ -133,7 +149,7 @@ namespace AppTest.Areas.Admin.Controllers
         {
             try
             {
-                if (lop < -2 || lop > 6)
+                if (lop < 1 || lop > 9)
                 {
                     return Json(new { success = false, message = "Danh mục lớp không hợp lệ (Mầm đến 5+)." });
                 }

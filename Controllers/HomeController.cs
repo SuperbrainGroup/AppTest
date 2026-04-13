@@ -98,7 +98,7 @@ namespace AppTest.Controllers
             }
 
             int lop = user.lop;
-            if (!LopMapper.IsValidAppLop(lop))
+            if (!LopMapper.IsValidLop(lop))
             {
                 return Json(new { success = false, message = "Lớp học viên không hợp lệ. Vui lòng kiểm tra dữ liệu trên hệ thống." });
             }
@@ -108,7 +108,7 @@ namespace AppTest.Controllers
                  .Where(q =>
                      q.Category.Enable == true &&
                      q.OnPaper == false &&
-                     q.Lop == lop
+                     (q.Lop == lop || q.Lop == lop - 3)
                  )
                  .OrderBy(q => q.Category!.DisplayOrder ?? 0)
                  .ThenBy(q => q.Id)
@@ -117,12 +117,12 @@ namespace AppTest.Controllers
                      q.Id,
                      q.Name,
                      q.CategoryId,
-                     lop = q.Lop,
+                     lop = q.Lop >= -2 && q.Lop <= 6 ? q.Lop + 3 : q.Lop,
                      CategoryOrderBy = q.Category!.DisplayOrder,
                      CategoryName = q.Category != null ? q.Category.Name : "Unknown",
                     categoryColor = q.Category != null ? q.Category.Color : "#198754",
                      maxPointCategory = _context.Questions
-                         .Where(x => x.CategoryId == q.CategoryId && x.Lop == lop)
+                         .Where(x => x.CategoryId == q.CategoryId && (x.Lop == lop || x.Lop == lop - 3))
                          .Sum(x => x.MaxPoint),
                      hasImage = q.Image != null,
                      q.Image,
@@ -159,7 +159,7 @@ namespace AppTest.Controllers
             }
 
             int lop = user.lop;
-            if (!LopMapper.IsValidAppLop(lop))
+            if (!LopMapper.IsValidLop(lop))
             {
                 return Ok(new { success = false, message = "Lớp học viên không hợp lệ. Vui lòng kiểm tra dữ liệu trên hệ thống." });
             }
@@ -438,7 +438,7 @@ namespace AppTest.Controllers
 
                         var ratiosZero = _context.UserTestDetails
                                     .Where(d => d.CategoryId == catId && d.TotalPoint > 0)
-                                    .Join(_context.UserTests.Where(ut => ut.CourseId == 0 && ut.UserId != userId && ut.Lop == lop), d => d.ResultId, ut => ut.Id, (d, ut) => (double)d.PointEarned / d.TotalPoint);
+                                    .Join(_context.UserTests.Where(ut => ut.CourseId == 0 && ut.UserId != userId && (ut.Lop == lop || ut.Lop == lop - 3)), d => d.ResultId, ut => ut.Id, (d, ut) => (double)d.PointEarned / d.TotalPoint);
                         avgDataZero[i] = ratiosZero.Any() ? (int)(ratiosZero.Average() * 100) : 0;
                     }
 
@@ -448,7 +448,7 @@ namespace AppTest.Controllers
                         int catId = validCategoryIds[i];
                         var ratiosOther = _context.UserTestDetails
                                         .Where(d => d.CategoryId == catId && d.TotalPoint > 0)
-                                        .Join(_context.UserTests.Where(ut => ut.CourseId != 0 && ut.UserId != userId && ut.Lop == lop), d => d.ResultId, ut => ut.Id, (d, ut) => (double)d.PointEarned / d.TotalPoint);
+                                        .Join(_context.UserTests.Where(ut => ut.CourseId != 0 && ut.UserId != userId && (ut.Lop == lop || ut.Lop == lop - 3)), d => d.ResultId, ut => ut.Id, (d, ut) => (double)d.PointEarned / d.TotalPoint);
                         avgDataOther[i] = ratiosOther.Any() ? (int)(ratiosOther.Average() * 100) : 0;
                     }
 
@@ -512,7 +512,7 @@ namespace AppTest.Controllers
                         return null;
                     }
 
-                    if (!LopMapper.TryConvertManagementLopToAppLop(student.lop, out int lop))
+                    if (!LopMapper.TryNormalizeLopCode(student.lop, out int lop))
                     {
                         Console.WriteLine("Lớp học viên không hợp lệ từ API quản lý: " + student.lop);
                         return null;

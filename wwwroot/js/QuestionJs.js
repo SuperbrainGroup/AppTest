@@ -43,20 +43,21 @@ $(document).ready(function () {
                     let filterLop = $("#classFilter").val(); 
 
                     $.each(response.data, function (index, q) {
-                        let qLop = String(q.lop != null ? q.lop : (q.Lop != null ? q.Lop : ""));
+                        const rawLop = q.lop != null ? q.lop : q.Lop;
+                        const normalizedLop = rawLop != null && rawLop !== undefined && rawLop >= -2 && rawLop <= 6 ? rawLop + 3 : rawLop;
+                        let qLop = String(normalizedLop != null ? normalizedLop : "");
                         
                         if (filterLop !== "" && filterLop !== qLop) {
                             return true; 
                         }
 
                         let displayLop = "-";
-                        let lv = q.lop != null ? q.lop : q.Lop;
-                        if (lv !== null && lv !== undefined) {
-                            if (lv == -2) displayLop = "Mầm";
-                            else if (lv == -1) displayLop = "Chồi";
-                            else if (lv == 0) displayLop = "Lá";
-                            else if (lv == 6) displayLop = "Lớp 5+";
-                            else displayLop = "Lớp " + lv;
+                        if (normalizedLop !== null && normalizedLop !== undefined) {
+                            if (normalizedLop == 1) displayLop = "Mầm";
+                            else if (normalizedLop == 2) displayLop = "Chồi";
+                            else if (normalizedLop == 3) displayLop = "Lá";
+                            else if (normalizedLop == 9) displayLop = "Lớp 5+";
+                            else displayLop = "Lớp " + (normalizedLop - 3);
                         }
 
                         displayCount++; 
@@ -286,6 +287,9 @@ $(document).ready(function () {
                     $("#createCategoryId").val(data.question.categoryId);
                     $("#displayOrder").val(data.question.displayOrder);
                     var lv = data.question.lop != null ? data.question.lop : data.question.Lop;
+                    if (lv != null && lv !== undefined && lv >= -2 && lv <= 6) {
+                        lv = lv + 3;
+                    }
                     $("#createLop").val(lv != null ? String(lv) : "1");
                     $("#maxPoint").val(data.question.maxPoint);
                     if (data.question.audio) {

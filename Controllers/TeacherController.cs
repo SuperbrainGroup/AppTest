@@ -162,7 +162,7 @@ namespace AppTest.Controllers
             _context.SaveChanges();
 
             var questions = await _context.Questions
-                .Where(q => q.OnPaper == true && q.Lop == lop)
+                .Where(q => q.OnPaper == true && (q.Lop == lop || q.Lop == lop - 3))
                 .OrderBy(q => q.CategoryId)
                 .Include(q => q.Category)
                 .Select(q => new
@@ -171,8 +171,8 @@ namespace AppTest.Controllers
                     q.Name,
                     q.CategoryId,
                     q.MaxPoint,
-                    maxPointCategory = _context.Questions.Where(x => x.CategoryId == q.CategoryId && x.Lop == lop).Sum(x => x.MaxPoint),
-                    lop = q.Lop,
+                    maxPointCategory = _context.Questions.Where(x => x.CategoryId == q.CategoryId && (x.Lop == lop || x.Lop == lop - 3)).Sum(x => x.MaxPoint),
+                    lop = q.Lop >= -2 && q.Lop <= 6 ? q.Lop + 3 : q.Lop,
                     CategoryName = q.Category != null ? q.Category.Name : "Unknown",
                     hasImage = q.Image != null,
                     q.Image
@@ -201,7 +201,7 @@ namespace AppTest.Controllers
             int lop = user.lop;
 
             var questions = await _context.Questions
-                .Where(q => q.OnPaper == true && q.Lop == lop)
+                .Where(q => q.OnPaper == true && (q.Lop == lop || q.Lop == lop - 3))
                 .OrderBy(q => q.CategoryId)
                 .Include(q => q.Category)
                 .Select(q => new
@@ -210,8 +210,8 @@ namespace AppTest.Controllers
                     q.Name,
                     q.CategoryId,
                     q.MaxPoint,
-                    maxPointCategory = _context.Questions.Where(x => x.CategoryId == q.CategoryId && x.Lop == lop).Sum(x => x.MaxPoint),
-                    lop = q.Lop,
+                    maxPointCategory = _context.Questions.Where(x => x.CategoryId == q.CategoryId && (x.Lop == lop || x.Lop == lop - 3)).Sum(x => x.MaxPoint),
+                    lop = q.Lop >= -2 && q.Lop <= 6 ? q.Lop + 3 : q.Lop,
                     CategoryName = q.Category != null ? q.Category.Name : "Unknown",
                     hasImage = q.Image != null,
                     q.Image
@@ -840,7 +840,7 @@ namespace AppTest.Controllers
                         return null;
                     }
 
-                    if (!LopMapper.TryConvertManagementLopToAppLop(student.lop, out int lop))
+                    if (!LopMapper.TryNormalizeLopCode(student.lop, out int lop))
                     {
                         Console.WriteLine("Lớp học viên không hợp lệ từ API quản lý: " + student.lop);
                         return null;
