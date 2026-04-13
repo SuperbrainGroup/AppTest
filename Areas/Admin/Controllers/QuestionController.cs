@@ -75,12 +75,12 @@ namespace AppTest.Areas.Admin.Controllers
         [Route("LoadListQuestion")]
         public async Task<IActionResult> GetQuestions(int categoryId,string searchString)
         {
-            if (categoryId == 0)
+            var question = _context.Questions.AsQueryable();
+
+            if (categoryId != 0)
             {
-                categoryId = 1;
+                question = question.Where(x => x.CategoryId == categoryId);
             }
-            var question = _context.Questions
-                .Where(x => x.CategoryId == categoryId).AsQueryable();
             if (!string.IsNullOrEmpty(searchString))
             {
                 question = question.Where(x => x.Name.Contains(searchString));
@@ -101,7 +101,11 @@ namespace AppTest.Areas.Admin.Controllers
                                     maxPoint = q.MaxPoint,
                                     ageGroup = q.AgeGroup,
                                     lop = q.Lop,
-                                    lopLabel = q.Lop != null ? $"Lớp {q.Lop}" : "Chưa chọn lớp",
+                                    lopLabel = q.Lop == -2 ? "Mầm" :
+                                                q.Lop == -1 ? "Chồi" :
+                                                q.Lop == 0 ? "Lá" :
+                                                q.Lop == 6 ? "Lớp 5+" :
+                                                q.Lop != null ? $"Lớp {q.Lop}" : "Chưa chọn lớp",
                                     ageText = q.AgeGroup != null ? AgeConvert.ageText((int)q.AgeGroup) : "-",
                                     ageColor = q.AgeGroup != null ? AgeConvert.ageColor((int)q.AgeGroup) : "#94a3b8",
                                     categoryName = q.Category != null ? q.Category.Name : "Unknow",
@@ -123,19 +127,18 @@ namespace AppTest.Areas.Admin.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> SaveChange(int id, int categoryId, string name, int lop, int maxPoint, IFormFile image, IFormFile audio)
+        public async Task<IActionResult> SaveChange(int id, int categoryId, string name, int lop, int maxPoint, IFormFile image, IFormFile audio, bool onPaper) 
         {
             try
             {
-                if (lop < 1 || lop > 12)
+                if (lop < -2 || lop > 6)
                 {
-                    return Json(new { success = false, message = "Lớp phải từ 1 đến 12." });
+                    return Json(new { success = false, message = "Danh mục lớp không hợp lệ (Mầm đến 5+)." });
                 }
 
                 string imageUrl = null;
                 string audioUrl = null;
 
-                // Kiểm tra nếu có ảnh được tải lên
                 if (image != null && image.Length > 0)
                 {
                     var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads/answers");
@@ -155,7 +158,6 @@ namespace AppTest.Areas.Admin.Controllers
                     imageUrl = "/uploads/answers/" + uniqueFileName;
                 }
 
-                // Kiểm tra nếu có audio được tải lên
                 if (audio != null && audio.Length > 0)
                 {
                     var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads/audio/questions");
@@ -174,6 +176,7 @@ namespace AppTest.Areas.Admin.Controllers
 
                     audioUrl = "/uploads/audio/questions/" + uniqueFileName;
                 }
+
                 if (id == 0)
                 {
                     var question = new Question()
@@ -187,7 +190,7 @@ namespace AppTest.Areas.Admin.Controllers
                         DateCreate = DateTime.Now,
                         Image = imageUrl,
                         Audio = audioUrl,
-                        OnPaper = false
+                        OnPaper = onPaper 
                     };
                     _context.Questions.Add(question);
                     await _context.SaveChangesAsync();
@@ -205,6 +208,8 @@ namespace AppTest.Areas.Admin.Controllers
                     question.AgeGroup = null;
                     question.CategoryId = categoryId;
                     question.MaxPoint = maxPoint;
+                    question.OnPaper = onPaper; 
+
                     if (imageUrl != null)
                     {
                         question.Image = imageUrl;

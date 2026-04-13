@@ -39,7 +39,27 @@ $(document).ready(function () {
             success: function (response) {
                 if (response.success) {
                     let body = "";
+                    let displayCount = 0; 
+                    let filterLop = $("#classFilter").val(); 
+
                     $.each(response.data, function (index, q) {
+                        let qLop = String(q.lop != null ? q.lop : (q.Lop != null ? q.Lop : ""));
+                        
+                        if (filterLop !== "" && filterLop !== qLop) {
+                            return true; 
+                        }
+
+                        let displayLop = "-";
+                        let lv = q.lop != null ? q.lop : q.Lop;
+                        if (lv !== null && lv !== undefined) {
+                            if (lv == -2) displayLop = "Mầm";
+                            else if (lv == -1) displayLop = "Chồi";
+                            else if (lv == 0) displayLop = "Lá";
+                            else if (lv == 6) displayLop = "Lớp 5+";
+                            else displayLop = "Lớp " + lv;
+                        }
+
+                        displayCount++; 
                         let count = 0;
                         q.answers.forEach(() => count++);
                         const imageQuestion = q.image ? `<img src="${q.image}" class="rounded-2" width="42" height="42" alt="">` : "";
@@ -88,8 +108,7 @@ $(document).ready(function () {
                                     <div class="d-flex align-items-start justify-content-between gap-2">
                                         <div class="d-flex align-items-center gap-2" style="min-width:0;">
                                             <div class="text-center" style="width:44px;">
-                                                <div class="fw-semibold">${index + 1}</div>
-                                            </div>
+                                                <div class="fw-semibold">${displayCount}</div> </div>
                                             <div class="text-center" style="width:44px;">
                                                 ${imageQuestion}
                                             </div>
@@ -99,7 +118,7 @@ $(document).ready(function () {
                                                     <div class="fw-semibold text-truncate" style="max-width:520px;">${q.name}</div>
                                                 </div>
                                                 <div class="small opacity-75 mt-1">
-                                                    <span class="me-3"><b>Lớp:</b> ${q.lopLabel || "-"}</span>
+                                                    <span class="me-3"><b>Lớp:</b> ${displayLop}</span>
                                                     <span class="me-3"><b>Điểm:</b> ${q.maxPoint}</span>
                                                     <span class="me-3">
                                                         <b>Danh mục:</b>
@@ -142,8 +161,15 @@ $(document).ready(function () {
                             </div>
                         `;
                     });
-                    $("#counts").text(response.data.length);
-                    $tblQuestion.html(body);
+
+                    $("#counts").text(displayCount);
+                    
+                    if (displayCount > 0) {
+                        $tblQuestion.html(body);
+                    } else {
+                        $tblQuestion.html("<div class='text-center text-muted py-4'>Không có câu hỏi nào phù hợp với bộ lọc!</div>");
+                    }
+
                 } else {
                     $tblQuestion.html("<div class='text-center text-muted py-4'>Không tìm thấy dữ liệu câu hỏi!</div>");
                 }
@@ -153,6 +179,15 @@ $(document).ready(function () {
             }
         });
     }
+
+    // Xử lý khi thay đổi Danh mục hoặc Lớp
+    $("#categorySelect, #classFilter").change(function () {
+        LoadlistQuestion();
+    });
+
+    $("#searchString").on("input", debounce(function () {
+        LoadlistQuestion();
+    }, 700));
     // 3️⃣ Xử lý khi thay đổi số lượng user mỗi trang
     $("#categorySelect").change(function () {
         LoadlistQuestion();
@@ -269,6 +304,10 @@ $(document).ready(function () {
 
     handleFormSubmit("#createQuestionForm", function (form, submitButton, originalText) {
         let formData = new FormData(form[0]);
+        const categoryName = $("#createCategoryId option:selected").text().trim();
+        if (categoryName === "Tự tin") {
+            formData.set("onPaper", "true");
+        }
         $.ajax({
             url: '/Admin/Question/SaveChange',
             type: "POST",

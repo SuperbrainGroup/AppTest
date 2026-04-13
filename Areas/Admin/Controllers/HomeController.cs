@@ -44,7 +44,6 @@ namespace AppTest.Areas.Admin.Controllers
         // ===========================
         // Dashboard APIs
         // ===========================
-
         [HttpGet]
         [Route("/admin/api/dashboard/course-category")]
         public async Task<IActionResult> CourseCategory()
@@ -52,115 +51,89 @@ namespace AppTest.Areas.Admin.Controllers
             var categories = await _context.QuestionCategories
                 .Where(c => c.Enable == true)
                 .OrderBy(c => c.DisplayOrder)
-                .Select(c => new
-                {
-                    id = c.Id,
-                    name = c.Name ?? string.Empty,
-                    color = c.Color ?? string.Empty
-                })
+                .Select(c => new { id = c.Id, name = c.Name, color = c.Color })
                 .ToListAsync();
 
-            if (!categories.Any())
-            {
-                return Ok(new
-                {
-                    categories = new List<object>(),
-                    courses = new List<object>(),
-                    seriesByCategory = new List<object>()
-                });
-            }
+            if (!categories.Any()) return Ok(new { categories = new List<object>(), courses = new List<object>(), seriesByCategory = new List<object>() });
 
-            var courseKeys = await _context.UserTests
-                .Where(ut => ut.IsComplete == true)
-                .Select(ut => ut.CourseName ?? "0")
-                .Distinct()
-                .ToListAsync();
-
-            int? TryParseCourseKey(string key)
-            {
-                if (string.IsNullOrWhiteSpace(key)) return 0;
-                return int.TryParse(key, out var n) ? n : null;
-            }
-
-            string CourseKeyToLabel(string key)
-            {
-                var k = string.IsNullOrWhiteSpace(key) ? "0" : key.Trim();
-                var n = TryParseCourseKey(k);
-                if (k == "0" || (n.HasValue && n.Value == 0))
-                    return "Chưa";
-                return $"{k}";
-            }
-
-            var orderedCourses = courseKeys
-                .Select(k => new { key = k, num = TryParseCourseKey(k) })
-                .OrderBy(x => x.num.HasValue ? 0 : 1)
-                .ThenBy(x => x.num ?? int.MaxValue)
-                .ThenBy(x => x.key)
-                .ToList();
-
-            var courses = orderedCourses.Select(x => new
-            {
-                key = x.key,
-                label = CourseKeyToLabel(x.key)
-            }).ToList();
-
-            var grouped = await (
-                from qr in _context.questionResults
-                join ut in _context.UserTests on qr.SessionId equals ut.Id
+            var onlineResults = await (
+                from d in _context.UserTestDetails
+                join ut in _context.UserTests on d.ResultId equals ut.Id
                 where ut.IsComplete == true
-                      && qr.CategoryId != null
-                join cat in _context.QuestionCategories on qr.CategoryId!.Value equals cat.Id
-                where cat.Enable == true
-                group new { qr } by new
-                {
-                    courseKey = (ut.CourseName ?? "0"),
-                    catId = qr.CategoryId.Value
-                }
-                into g
+                group d by new { classKey = ut.Lop, catId = d.CategoryId } into g
                 select new
                 {
-                    courseKey = g.Key.courseKey,
+                    classKey = g.Key.classKey,
                     catId = g.Key.catId,
-                    sumEarned = g.Sum(x => x.qr.PointEarned ?? 0),
-                    sumMax = g.Sum(x => x.qr.MaxPoint ?? 0)
+                    sumEarned = (double)g.Sum(x => x.PointEarned),
+                    sumMax = (double)g.Sum(x => x.TotalPoint)
                 }
             ).ToListAsync();
 
+            var paperResults = await (
+                from qr in _context.questionResults
+                join ut in _context.UserTests on qr.SessionId equals ut.Id
+                where ut.IsComplete == true && qr.CategoryId != null
+                group qr by new { classKey = ut.Lop, catId = qr.CategoryId.Value } into g
+                select new
+                {
+                    classKey = g.Key.classKey,
+                    catId = g.Key.catId,
+                    sumEarned = (double)g.Sum(x => x.PointEarned ?? 0),
+                    sumMax = (double)g.Sum(x => x.MaxPoint ?? 0)
+                }
+            ).ToListAsync();
+
+            var allMergedResults = onlineResults
+                .Concat(paperResults)
+                .GroupBy(x => new { x.classKey, x.catId })
+                .Select(g => new
+                {
+                    classKey = g.Key.classKey,
+                    catId = g.Key.catId,
+                    sumEarned = g.Sum(x => x.sumEarned),
+                    sumMax = g.Sum(x => x.sumMax)
+                }).ToList();
+
+            var classKeys = allMergedResults.Select(x => x.classKey).Distinct().OrderBy(l => l ?? 0).ToList();
+            var courses = classKeys.Select(l => new {
+                key = l?.ToString() ?? "0",
+                label = (l == null || l == 0) ? "Chưa lớp" : $"Lớp {l}"
+            }).ToList();
+
             var percentMap = new Dictionary<string, int>();
-            foreach (var row in grouped)
+            foreach (var row in allMergedResults)
             {
-                double percent = row.sumMax > 0 ? ((double)row.sumEarned / row.sumMax) * 100.0 : 0.0;
-                percent = System.Math.Min(100, System.Math.Max(0, percent));
-                int percentInt = (int)System.Math.Round(percent);
-                percentMap[$"{row.courseKey}|{row.catId}"] = percentInt;
+                string key = (row.classKey?.ToString() ?? "0") + "|" + row.catId;
+                double percent = row.sumMax > 0 ? (row.sumEarned / row.sumMax) * 100.0 : 0;
+                percentMap[key] = (int)System.Math.Round(percent);
             }
 
             var seriesByCategory = categories.Select(cat => new
             {
                 categoryId = cat.id,
                 name = cat.name,
-                color = cat.color,
-                data = orderedCourses.Select(course =>
-                    percentMap.TryGetValue($"{course.key}|{cat.id}", out var p) ? p : 0
-                ).ToList()
+                color = string.IsNullOrWhiteSpace(cat.color) ? "#198754" : cat.color, 
+                data = classKeys.Select(l => {
+                    string key = (l?.ToString() ?? "0") + "|" + cat.id;
+                    return percentMap.ContainsKey(key) ? percentMap[key] : 0;
+                }).ToList()
             }).ToList();
 
-            return Ok(new
-            {
-                categories,
-                courses,
-                seriesByCategory
+            return Ok(new 
+            { 
+                categories = categories.Select(c => c.name).ToList(), 
+                courses, 
+                seriesByCategory 
             });
         }
-
+        
         [HttpGet]
         [Route("/admin/api/dashboard/top-branches")]
         public async Task<IActionResult> TopBranches(int top = 10)
         {
             int take = top > 0 ? top : 10;
 
-            // Nếu đã có dữ liệu idChiNhanh trong UserTest => thống kê nhanh trực tiếp từ DB.
-            // Fallback: nếu chưa có dữ liệu (mới deploy/migration), có thể cần ngoại API (phần cũ).
             bool hasStoredBranch = await _context.UserTests.AnyAsync(ut =>
                 ut.IsComplete == true &&
                 ut.UserId != null &&

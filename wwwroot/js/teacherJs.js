@@ -7,6 +7,13 @@ $(document).ready(function () {
     let currentResultDetail = null;
     let lastRadarCategories = [];
     let lastRadarChartData = [];
+    $(document).on("click", ".btn_chitiet", function (e) {
+        console.log("[DEBUG] Click Chi tiết thành công!");
+        const id = $(this).attr("data-id");
+        if (id) {
+            window.location.href = "/gv/xem-ket-qua?studentId=" + encodeURIComponent(id);
+        }
+    });
     function loadStudents() {
         $("#studentTable").html("<tr><td colspan=8 class='text-center'>Đang tải dữ liệu, vui lòng đợi trong giây lát ...</td></tr>");
         $.ajax({
@@ -15,7 +22,9 @@ $(document).ready(function () {
             data: {
                 limit: limit,
                 offset: (currentPage - 1) * limit,
-                search: $("#searchInput").val()
+                search: $("#searchInput").val(),
+                fromDate: $("#fromDate").val(),
+                toDate: $("#toDate").val()
             },
             success: function (response) {
                 if (response.success) {
@@ -78,7 +87,10 @@ $(document).ready(function () {
                 alert("Không thể kết nối đến server!");
             }
         });
-        document.getElementById("currentPage").textContent ="Trang "+ currentPage;
+        const pageElem = document.getElementById("currentPage");
+        if (pageElem) {
+            pageElem.textContent = "Trang " + currentPage;
+        }
     } loadStudents();
     $("#searchInput").on("input", debounce(function () {
         currentPage = 1;
@@ -100,16 +112,36 @@ $(document).ready(function () {
     let columnChartInstance = null;
 
     $(document).on("click", ".btn_ketqua", function () {
-        printResultForStudent($(this).data("id"));
+        const id = $(this).data("id");
+        window.AppStudentPrint.printResult(id, studentDirectory[id]);
     });
 
-    $(document).on("click", ".btn_chitiet", function () {
-        const studentId = $(this).data("id");
-        window.location.href = "/gv/xem-ket-qua?studentId=" + encodeURIComponent(studentId);
+    $(document).on("click", ".btn_chitiet", function (e) {
+        const target = $(this);
+        const idFromData = target.data("id");
+        const idFromAttr = target.attr("data-id");
+
+        const studentId = idFromAttr || idFromData;
+
+        if (!studentId) {
+            console.error("[ERROR] Không tìm thấy Student ID! Hãy kiểm tra lại HTML của nút.");
+            alert("Lỗi: Không tìm thấy ID học viên.");
+            return;
+        }
+
+        const targetUrl = "/gv/xem-ket-qua?studentId=" + encodeURIComponent(studentId);
+
+        window.location.href = targetUrl;
     });
 
-    $(document).on("click", ".btn_indethi", function () {
-        printExamForStudent($(this).data("id"));
+    $(document).on("click", ".btn_indethi", function (e) {
+        e.preventDefault();
+        const id = $(this).attr("data-id"); // Lấy ID từ attribute
+        if (id) {
+            window.AppStudentPrint.printExam(id); 
+        } else {
+            console.error("Không tìm thấy ID để in đề");
+        }
     });
 
     $(document).on("click", ".btn_nhapdiem", function () {
@@ -201,301 +233,40 @@ $(document).ready(function () {
             }
         });
     });
-    function printExamForStudent(studentId) {
-        const cfg = window.studentOverviewConfig || {};
-        const printUrl = cfg.printExamUrl || "/LoadPrintExam";
-        $.ajax({
-            url: printUrl,
-            type: "GET",
-            data: { studentId: studentId },
-            success: function (response) {
-                if (!response.success) {
-                    showNotification("Không tìm thấy câu hỏi!");
-                    return;
-                }
-                if (!window.AppStudentPrint) {
-                    showNotification("Thiếu studentPrintShared.js.");
-                    return;
-                }
-                window.AppStudentPrint.openPrintWindow(
-                    "In đề thi",
-                    window.AppStudentPrint.buildExamPrintHtml(response, cfg)
-                );
-            },
-            error: function () {
-                showNotification("Lỗi tải đề thi.");
-            }
+
+    $("#fromDate, #toDate").on("change", function () {
+        currentPage = 1;
+        loadStudents();
+    });
+
+    $(document).on("click", "#btnReset", function () {
+        $("#fromDate, #toDate, #searchInput").val("");
+        syncDateInputs(); // MODIFIED HERE: Cập nhật trạng thái hiển thị
+        currentPage = 1;
+        loadStudents();
+    });
+
+    const handleDateChange = function() {
+        if (this.value) {
+            $(this).addClass('has-value');
+        } else {
+            $(this).removeClass('has-value');
+        }
+    };
+
+    $(document).on("change input", ".date-input-custom", handleDateChange);
+
+    function syncDateInputs() {
+        $(".date-input-custom").each(function() {
+            handleDateChange.call(this);
         });
     }
 
-    function printResultForStudent(studentId) {
-        if (!window.AppStudentPrint) {
-            showNotification("Thiếu studentPrintShared.js.");
-            return;
+    $(document).on("click", "input[type='date']", function() {
+        if (typeof this.showPicker === 'function') {
+            this.showPicker();
         }
-        const cfg = window.studentOverviewConfig || {};
-        const resultUrl = cfg.resultDetailUrl || "/Teacher/LoadResultTestById";
-        const radarUrl = cfg.radarChartUrl || "/GetRadarChartData";
-        lastRadarCategories = [];
-        lastRadarChartData = [];
-        currentResultStudent = { ...(studentDirectory[studentId] || {}), id: studentId };
-        currentResultDetail = null;
-        showNotification("Đang chuẩn bị bản in...");
-        $.ajax({
-            url: resultUrl,
-            type: "GET",
-            data: { studentId: studentId },
-            success: function (rDetail) {
-                if (!rDetail || !rDetail.success) {
-                    showNotification("Không có dữ liệu kết quả.");
-                    return;
-                }
-                currentResultStudent = {
-                    ...(studentDirectory[studentId] || {}),
-                    ...(rDetail.student || {}),
-                    id: studentId
-                };
-                currentResultDetail = rDetail;
-                $.ajax({ url: radarUrl, type: "GET", data: { studentId: studentId } }).done(function (rRadar) {
-                    if (rRadar && rRadar.categories && rRadar.chartData) {
-                        lastRadarCategories = rRadar.categories;
-                        lastRadarChartData = rRadar.chartData;
-                        drawRadarChart("radarChartPrint", rRadar.categories, rRadar.chartData);
-                    } else {
-                        lastRadarCategories = [];
-                        lastRadarChartData = [];
-                        if (radarChartInstance) {
-                            radarChartInstance.dispose();
-                        }
-                        radarChartInstance = null;
-                    }
-                    const tableParts = window.AppStudentPrint.buildResultTableParts(lastRadarCategories, lastRadarChartData);
-                    const detailHtml = currentResultDetail.description
-                        ? currentResultDetail.description
-                        : "<p>Hiện chưa có nhận xét chi tiết cho học viên này.</p>";
-                    setTimeout(function () {
-                        const radarImg = radarChartInstance ? radarChartInstance.getDataURL({
-                            type: "png",
-                            pixelRatio: 3,
-                            backgroundColor: "#ffffff"
-                        }) : "";
-                        window.AppStudentPrint.openPrintWindow(
-                            "In Kết Quả",
-                            window.AppStudentPrint.buildResultPrintHtml({
-                                student: currentResultStudent,
-                                detailHtml: detailHtml,
-                                tableHeadHtml: tableParts.head,
-                                tableBodyHtml: tableParts.body,
-                                radarImg: radarImg,
-                                columnImg: "",
-                                lastRadarCategories: lastRadarCategories,
-                                lastRadarChartData: lastRadarChartData,
-                                cfg: cfg
-                            })
-                        );
-                    }, 450);
-                }).fail(function () {
-                    showNotification("Không thể tải biểu đồ để in.");
-                });
-            },
-            error: function () {
-                showNotification("Không thể kết nối đến server để lấy kết quả!");
-            }
-        });
-    }
-
-    function drawRadarChart(domId, categoryNames, chartData) {
-        const chartDom = document.getElementById(domId || "radarChartPrint");
-        if (!chartDom) {
-            return;
-        }
-
-        if (radarChartInstance) {
-            radarChartInstance.dispose();
-        }
-
-        radarChartInstance = echarts.init(chartDom);
-        const seriesData = chartData.map(item => ({
-            value: item.data,
-            name: item.name
-        }));
-
-        radarChartInstance.setOption({
-            title: {
-                text: "",
-                left: "center"
-            },
-            tooltip: {},
-            legend: {
-                data: seriesData.map(x => x.name),
-                bottom: 0,
-                textStyle: {
-                    fontFamily: '"Nunito Sans", sans-serif',
-                    fontSize: 12,
-                    color: "#253247"
-                }
-            },
-            radar: {
-                radius: "62%",
-                indicator: categoryNames.map(name => ({
-                    name: name,
-                    max: 100
-                })),
-                splitArea: {
-                    areaStyle: {
-                        color: ["#fbfcfe", "#f5f8fc", "#eef3f9", "#e7eef7", "#dfe8f4"]
-                    }
-                },
-                axisName: {
-                    color: "#253247",
-                    fontSize: 12
-                }
-            },
-            series: [{
-                name: "Chi tiết kết quả",
-                type: "radar",
-                data: seriesData,
-                itemStyle: {
-                    color: "#1e4d7a"
-                },
-                areaStyle: {
-                    color: "rgba(30, 77, 122, 0.38)"
-                },
-                lineStyle: {
-                    width: 2,
-                    color: "#183153"
-                }
-            }]
-        });
-
-        radarChartInstance.resize();
-    }
-
-    function drawColumnChart(domId, categoryNames, chartData) {
-        const chartDom = document.getElementById(domId || "columnChartPrint");
-        if (!chartDom) {
-            return;
-        }
-
-        if (columnChartInstance) {
-            columnChartInstance.dispose();
-        }
-
-        columnChartInstance = echarts.init(chartDom);
-        const dataToChart = {
-            userData: chartData.userData || [],
-            avgDataZero: chartData.avgDataZero || [],
-            avgDataOther: chartData.avgDataOther || []
-        };
-
-        columnChartInstance.setOption({
-            title: {
-                text: "",
-                left: "center"
-            },
-            tooltip: {
-                trigger: "axis",
-                axisPointer: {
-                    type: "shadow"
-                },
-                formatter: function (params) {
-                    let tooltipContent = params[0].name + "<br/>";
-                    params.forEach(function (item) {
-                        tooltipContent += `${item.marker} ${item.seriesName}: <b>${item.value}%</b><br/>`;
-                    });
-                    return tooltipContent;
-                }
-            },
-            legend: {
-                data: ["Điểm của bạn", "Trung bình chưa học", "Trung bình đã học"],
-                bottom: 0,
-                textStyle: {
-                    fontFamily: '"Nunito Sans", sans-serif',
-                    fontSize: 12
-                }
-            },
-            grid: {
-                left: "4%",
-                right: "4%",
-                top: "10%",
-                bottom: "18%",
-                containLabel: true
-            },
-            xAxis: {
-                type: "category",
-                data: categoryNames,
-                axisLabel: {
-                    interval: 0,
-                    rotate: 28,
-                    fontFamily: '"Nunito Sans", sans-serif',
-                    fontSize: 12,
-                    color: "#555"
-                }
-            },
-            yAxis: {
-                type: "value",
-                name: "Điểm (%)",
-                max: 100,
-                axisLabel: {
-                    formatter: "{value}%",
-                    fontFamily: '"Nunito Sans", sans-serif',
-                    fontSize: 12,
-                    color: "#555"
-                }
-            },
-            series: [
-                {
-                    name: "Điểm của bạn",
-                    type: "bar",
-                    data: dataToChart.userData,
-                    barGap: "10%",
-                    itemStyle: {
-                        color: "#315a8a"
-                    },
-                    label: {
-                        show: true,
-                        position: "top",
-                        formatter: "{c}%",
-                        fontFamily: '"Nunito Sans", sans-serif',
-                        fontSize: 11
-                    }
-                },
-                {
-                    name: "Trung bình chưa học",
-                    type: "bar",
-                    data: dataToChart.avgDataZero,
-                    itemStyle: {
-                        color: "#8eb69b"
-                    },
-                    label: {
-                        show: true,
-                        position: "top",
-                        formatter: "{c}%",
-                        fontFamily: '"Nunito Sans", sans-serif',
-                        fontSize: 11
-                    }
-                },
-                {
-                    name: "Trung bình đã học",
-                    type: "bar",
-                    data: dataToChart.avgDataOther,
-                    itemStyle: {
-                        color: "#d97757"
-                    },
-                    label: {
-                        show: true,
-                        position: "top",
-                        formatter: "{c}%",
-                        fontFamily: '"Nunito Sans", sans-serif',
-                        fontSize: 11
-                    }
-                }
-            ]
-        });
-
-        columnChartInstance.resize();
-    }
-
+    });
 });
 
 function debounce(func, delay) {

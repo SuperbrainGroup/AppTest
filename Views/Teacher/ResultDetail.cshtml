@@ -30,15 +30,40 @@
         width: 100%;
         border-collapse: collapse;
     }
-
-    thead th {
+@* --------- *@
+    /* MODIFIED: Ép màu xanh đậm và chữ trắng cho toàn bộ header table trong trang */
+    thead th, 
+    .table thead th, 
+    .table-light th { 
         position: sticky;
         top: 0;
-        background: #198754;
-        color: white;
-        z-index: 1;
+        background-color: #198754 !important; /* Xanh chuẩn của hệ thống */
+        color: #ffffff !important;            /* Chữ trắng tinh */
+        text-align: center;
+        border-color: #146c43 !important;
+        z-index: 2;
+        font-weight: 700;
+        padding: 12px 8px !important;
     }
 
+    /* MODIFIED: Làm nổi bật cột Kết quả và các chữ đúng/sai */
+    #attemptQuestionsBody td:last-child,
+    .text-success {
+        color: #000000 !important; /* Xanh đậm để rõ trên nền trắng */
+        opacity: 1 !important;
+        font-weight: 600 !important;
+        text-transform: none !important;
+        font-size: 1rem !important;
+        font-family: inherit !important;
+        -webkit-text-fill-color: #000000 !important;
+    }
+
+    /* Nếu kết quả đang nằm trong Badge, ép màu cho Badge */
+    .badge.bg-success {
+        background-color: #198754 !important;
+        color: #fff !important;
+    }
+@* -------- *@
     #radarChart {
         width: 100%;
         height: auto;

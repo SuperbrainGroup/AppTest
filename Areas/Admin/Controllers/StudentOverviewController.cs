@@ -12,9 +12,12 @@ namespace AppTest.Areas.Admin.Controllers
     {
         private readonly IStudentOverviewService _studentOverviewService;
 
-        public StudentOverviewController(IStudentOverviewService studentOverviewService)
+        private readonly CheckUser _checkUser;
+
+        public StudentOverviewController(IStudentOverviewService studentOverviewService, CheckUser checkUser)
         {
             _studentOverviewService = studentOverviewService;
+            _checkUser = checkUser;
         }
 
         [HttpGet]
@@ -23,7 +26,11 @@ namespace AppTest.Areas.Admin.Controllers
         {
             try
             {
-                var students = await _studentOverviewService.GetAllTestedStudentsAsync(search, offset, limit);
+                int userId = _checkUser.GetUserId(); 
+                var adminProfile = await _studentOverviewService.GetStaffProfileAsync(userId); // MODIFIED: Đổi từ Student sang Staff
+                int idChiNhanh = adminProfile?.idChiNhanh ?? 0;
+
+                var students = await _studentOverviewService.GetAllTestedStudentsAsync(idChiNhanh, search, offset, limit);
                 return Ok(new { success = true, message = "Đã lấy danh sách thành công", data = students });
             }
             catch (Exception ex)
@@ -61,7 +68,8 @@ namespace AppTest.Areas.Admin.Controllers
                     student = payload.Student,
                     data = payload.Data,
                     categories = payload.Categories,
-                    description = payload.Description
+                    description = payload.Description,
+                    handwritingComment = payload.HandwritingComment
                 });
             }
             catch (Exception ex)

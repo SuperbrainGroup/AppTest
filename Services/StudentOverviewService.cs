@@ -7,7 +7,8 @@ namespace AppTest.Services
     public interface IStudentOverviewService
     {
         Task<User?> GetStudentProfileAsync(int userId);
-        Task<List<StudentWithTestStatus>> GetAllTestedStudentsAsync(string? search, int offset, int limit);
+        Task<User?> GetStaffProfileAsync(int userId);
+        Task<List<StudentWithTestStatus>> GetAllTestedStudentsAsync(int idChiNhanh, string? search, int offset, int limit);
         Task<PrintExamPayload> GetPrintExamPayloadAsync(int studentId);
         Task<ResultDetailPayload> GetResultDetailPayloadAsync(int studentId);
         Task<RadarChartPayload> GetRadarChartPayloadAsync(int studentId);
@@ -51,7 +52,7 @@ namespace AppTest.Services
                     return null;
                 }
 
-                int lop = Math.Clamp(student.lop, 1, 12);
+                int lop = Math.Clamp(student.lop, -2, 6);
                 return new User
                 {
                     Id = student.idhocvien,
@@ -77,64 +78,70 @@ namespace AppTest.Services
             }
         }
 
-        public async Task<List<StudentWithTestStatus>> GetAllTestedStudentsAsync(string? search, int offset, int limit)
+        public async Task<User?> GetStaffProfileAsync(int userId)
         {
-            var latestTests = await _context.UserTests
-                .Where(x => x.IsComplete == true && x.UserId != null)
-                .GroupBy(x => x.UserId!.Value)
-                .Select(g => new
-                {
-                    UserId = g.Key,
-                    NumberTest = g.Count(),
-                    DateTest = g.Max(x => x.DateCreate)
-                })
-                .OrderByDescending(x => x.DateTest)
-                .ToListAsync();
+            string apiUrl = $"http://45.119.82.38:6969/api/Teachers/{userId}";
+            try
+            {
+                using var client = _httpClientFactory.CreateClient();
+                client.DefaultRequestHeaders.Add("accept", "application/json");
+                var response = await client.GetAsync(apiUrl);
+                if (!response.IsSuccessStatusCode) return null;
+
+                var responseData = await response.Content.ReadAsStringAsync();
+                var userJson = JsonConvert.DeserializeObject<UserDto>(responseData);
+                if (userJson == null) return null;
+
+                return new User { Id = userJson.id, idChiNhanh = userJson.idChiNhanh, ten = userJson.hoten };
+            }
+            catch { return null; }
+        }
+
+        // MODIFIED: Cập nhật chữ ký hàm thêm idChiNhanh và đổi logic sang Student-centric
+        public async Task<List<StudentWithTestStatus>> GetAllTestedStudentsAsync(int idChiNhanh, string? search, int offset, int limit)
+        {
+            // 1. Lấy danh sách học viên từ API theo chi nhánh
+            string apiUrl = $"http://45.119.82.38:6969/api/Students/GetStudentByChiNhanh/{idChiNhanh}?limit={limit}&offset={offset}&search={search ?? ""}";
+            
+            using var client = _httpClientFactory.CreateClient();
+            client.DefaultRequestHeaders.Add("accept", "application/json");
+
+            var response = await client.GetAsync(apiUrl);
+            if (!response.IsSuccessStatusCode) return new List<StudentWithTestStatus>();
+
+            var jsonString = await response.Content.ReadAsStringAsync();
+            var studentsApi = JsonConvert.DeserializeObject<List<StudentByTeacherDto>>(jsonString);
+
+            if (studentsApi == null) return new List<StudentWithTestStatus>();
 
             var enriched = new List<StudentWithTestStatus>();
-            foreach (var item in latestTests)
-            {
-                var student = await GetStudentProfileAsync(item.UserId);
-                if (student == null)
-                {
-                    continue;
-                }
 
-                DateTime.TryParse(student.ngaysinh, out var birthDate);
+            // 2. Duyệt danh sách từ API và kiểm tra bài test tại DB local
+            foreach (var s in studentsApi)
+            {
+                var testQuery = _context.UserTests
+                    .Where(x => x.UserId == s.id && x.IsComplete == true)
+                    .OrderByDescending(x => x.DateCreate);
+
+                var hasTest = await testQuery.AnyAsync();
+                
                 enriched.Add(new StudentWithTestStatus
                 {
-                    Id = student.Id,
-                    mahs = student.mahs,
-                    ten = student.ten ?? string.Empty,
-                    Email = student.Email ?? string.Empty,
-                    dienthoai = student.phhs_dienthoai ?? string.Empty,
-                    namsinh = birthDate,
-                    CourseName = student.courseName ?? string.Empty,
-                    HasTestResult = true,
-                    NumberTest = item.NumberTest,
-                    DateTest = item.DateTest
+                    Id = s.id,
+                    mahs = s.mahs,
+                    ten = s.ten ?? string.Empty,
+                    Email = s.email ?? string.Empty,
+                    dienthoai = s.phhS_dienthoai ?? string.Empty,
+                    namsinh = s.namsinh,
+                    HasTestResult = hasTest,
+                    NumberTest = hasTest ? await testQuery.CountAsync() : 0,
+                    DateTest = hasTest ? (await testQuery.FirstOrDefaultAsync())?.DateCreate : null
                 });
             }
 
-            if (!string.IsNullOrWhiteSpace(search))
-            {
-                string normalized = search.Trim().ToLowerInvariant();
-                enriched = enriched
-                    .Where(x =>
-                        (x.mahs ?? string.Empty).ToLowerInvariant().Contains(normalized) ||
-                        (x.ten ?? string.Empty).ToLowerInvariant().Contains(normalized) ||
-                        (x.Email ?? string.Empty).ToLowerInvariant().Contains(normalized) ||
-                        (x.dienthoai ?? string.Empty).ToLowerInvariant().Contains(normalized) ||
-                        (x.CourseName ?? string.Empty).ToLowerInvariant().Contains(normalized))
-                    .ToList();
-            }
-
-            return enriched
-                .Skip(Math.Max(offset, 0))
-                .Take(limit <= 0 ? 50 : limit)
-                .ToList();
+            return enriched;
         }
-
+        
         public async Task<PrintExamPayload> GetPrintExamPayloadAsync(int studentId)
         {
             var user = await GetStudentProfileAsync(studentId) ?? throw new InvalidOperationException("Student not found.");
@@ -164,11 +171,12 @@ namespace AppTest.Services
                 Questions = questions
             };
         }
-
+        // Nhận xét từ admin
         public async Task<ResultDetailPayload> GetResultDetailPayloadAsync(int studentId)
         {
-            var user = await GetStudentProfileAsync(studentId) ?? throw new InvalidOperationException("Student not found.");
-            string description = $"<p class='fw-bolder mb-0'>Nhận xét chung:</p><p class='mb-0'>Xin chào <b>{user.ten}</b>, Dưới đây là kết quả bài kiểm tra năng lực về các kỹ năng:";
+            var user = await GetStudentProfileAsync(studentId) ?? throw new InvalidOperationException("Học viên không tồn tại.");
+            
+            // Lấy bài kiểm tra mới nhất đã hoàn thành (Khớp logic Controller)
             var userTest = await _context.UserTests
                 .Where(x => x.UserId == studentId && x.IsComplete == true)
                 .OrderByDescending(x => x.Id)
@@ -176,8 +184,11 @@ namespace AppTest.Services
 
             if (userTest == null)
             {
-                throw new InvalidOperationException("Không tìm thấy bài kiểm tra đã hoàn thành cho học viên này.");
+                throw new InvalidOperationException("Không tìm thấy bài kiểm tra đã hoàn thành.");
             }
+
+            // Tách riêng nhận xét cầm bút
+            string handwritingComment = userTest.GeneralComment ?? "";
 
             var categories = await _context.QuestionCategories
                 .Where(x => x.Enable == true)
@@ -185,7 +196,7 @@ namespace AppTest.Services
                 .ToListAsync();
 
             var categoryNames = categories.Select(c => c.Name ?? string.Empty).ToArray();
-
+            
             var allDetailsForSession = await _context.UserTestDetails
                 .Where(d => d.ResultId == userTest.Id)
                 .ToListAsync();
@@ -194,63 +205,57 @@ namespace AppTest.Services
             List<string> individualDescriptions = new();
             HashSet<int> categoriesWithPaperResults = new();
 
+            // 1. XỬ LÝ KẾT QUẢ TỪ BÀI THI GIẤY 
             var paperResults = await _context.questionResults
                 .Where(qr => qr.SessionId == userTest.Id)
                 .ToListAsync();
 
             var groupedPaperResults = paperResults.GroupBy(qr => qr.CategoryId)
-                .Select(g => new
-                {
+                .Select(g => new {
                     CategoryId = g.Key,
                     TotalEarned = g.Sum(x => x.PointEarned ?? 0),
                     TotalMax = g.Sum(x => x.MaxPoint ?? 0)
-                })
-                .ToList();
+                }).ToList();
 
             foreach (var paperResult in groupedPaperResults)
             {
                 int categoryIndex = categories.FindIndex(c => c.Id == paperResult.CategoryId);
-                if (categoryIndex == -1)
+                if (categoryIndex != -1)
                 {
-                    continue;
-                }
+                    double paperPercent = paperResult.TotalMax > 0 
+                        ? (double)paperResult.TotalEarned / paperResult.TotalMax * 100 
+                        : 0;
+                    paperPercent = Math.Min(100, Math.Max(0, paperPercent));
 
-                double paperPercent = paperResult.TotalMax > 0
-                    ? (double)paperResult.TotalEarned / paperResult.TotalMax * 100
-                    : 0;
-                paperPercent = Math.Min(100, Math.Max(0, paperPercent));
-                dataForChart[categoryIndex] = (int)Math.Round(paperPercent);
-                categoriesWithPaperResults.Add(paperResult.CategoryId ?? 0);
+                    dataForChart[categoryIndex] = (int)Math.Round(paperPercent);
+                    categoriesWithPaperResults.Add(paperResult.CategoryId ?? 0);
 
-                var res = await _context.categoryResultSettings
-                    .Where(x => x.FromPoint <= paperPercent && x.ToPoint >= paperPercent && x.CategoryId == paperResult.CategoryId)
-                    .FirstOrDefaultAsync();
+                    var res = await _context.categoryResultSettings
+                        .Where(x => x.FromPoint <= paperPercent && x.ToPoint >= paperPercent && x.CategoryId == paperResult.CategoryId)
+                        .FirstOrDefaultAsync();
 
-                if (res != null && !string.IsNullOrWhiteSpace(res.Description))
-                {
-                    var categoryName = categories.FirstOrDefault(c => c.Id == paperResult.CategoryId)?.Name ?? $"Category {paperResult.CategoryId}";
-                    individualDescriptions.Add($"<br><i class='ti ti-arrow-narrow-right'></i> {categoryName}: {res.Description}.");
+                    if (res != null && !string.IsNullOrWhiteSpace(res.Description))
+                    {
+                        var catName = categories.FirstOrDefault(c => c.Id == paperResult.CategoryId)?.Name ?? "Kỹ năng";
+                        // Format: • <b>Tên:</b> Nội dung
+                        individualDescriptions.Add($"• <b>{catName}:</b> {res.Description}.");
+                    }
                 }
             }
 
+            // 2. XỬ LÝ KẾT QUẢ ONLINE CHO CÁC KỸ NĂNG CÒN LẠI
             foreach (var category in categories)
             {
-                if (categoriesWithPaperResults.Contains(category.Id))
-                {
-                    continue;
-                }
+                if (categoriesWithPaperResults.Contains(category.Id)) continue;
 
                 int categoryIndex = categories.FindIndex(c => c.Id == category.Id);
-                if (categoryIndex == -1)
-                {
-                    continue;
-                }
-
                 var catDetails = allDetailsForSession.Where(d => d.CategoryId == category.Id).ToList();
+                
                 int earned = catDetails.Sum(d => d.PointEarned);
                 int total = catDetails.Sum(d => d.TotalPoint);
                 double finalCategoryPercent = total > 0 ? (double)earned / total * 100 : 0;
                 finalCategoryPercent = Math.Min(100, Math.Max(0, finalCategoryPercent));
+
                 dataForChart[categoryIndex] = (int)Math.Round(finalCategoryPercent);
 
                 var res = await _context.categoryResultSettings
@@ -259,13 +264,20 @@ namespace AppTest.Services
 
                 if (res != null && !string.IsNullOrWhiteSpace(res.Description))
                 {
-                    individualDescriptions.Add($"<i class='ti ti-arrow-narrow-right'></i> {category.Name}: {res.Description}.");
+                    individualDescriptions.Add($"• <b>{category.Name}:</b> {res.Description}.");
                 }
             }
 
-            description += individualDescriptions.Any()
-                ? string.Join("<br>", individualDescriptions)
-                : "<p>Hiện không có nhận xét chi tiết kết quả của học viên.</p>";
+            // 3. TẠO CHUỖI DESCRIPTION 
+            string finalDescription = "";
+            if (individualDescriptions.Any())
+            {
+                finalDescription = $"<div style='font-size:16px; line-height:1.5;'>" + string.Join("<br>", individualDescriptions) + "</div>";
+            }
+            else
+            {
+                finalDescription = "<div style='font-size:16px;'>Hiện không có nhận xét chi tiết kết quả của học viên.</div>";
+            }
 
             return new ResultDetailPayload
             {
@@ -273,7 +285,8 @@ namespace AppTest.Services
                 Student = user,
                 Categories = categoryNames,
                 Data = dataForChart,
-                Description = description
+                Description = finalDescription,
+                HandwritingComment = handwritingComment
             };
         }
 
@@ -464,6 +477,7 @@ namespace AppTest.Services
         public string[] Categories { get; set; } = Array.Empty<string>();
         public int[] Data { get; set; } = Array.Empty<int>();
         public string Description { get; set; } = string.Empty;
+        public string HandwritingComment { get; set; } = string.Empty;
     }
 
     public class RadarChartPayload

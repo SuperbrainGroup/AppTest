@@ -47,13 +47,16 @@ namespace AppTest.Controllers
         }
         [Route("/gv/dang-nhap")]
         [AllowAnonymous]
-        public IActionResult Login()
+        public async Task<IActionResult> Login()
         {
+            var bg = await _context.AppSettings.FirstOrDefaultAsync(x => x.SettingKey == "StudentBackground");
+            ViewBag.StudentBackground = bg?.SettingValue;
+            
             return View();
         }
         [HttpGet]
         [Route("GetListStudents")]
-        public async Task<IActionResult> GetStudents(int limit, int offset, string search)
+        public async Task<IActionResult> GetStudents(int limit, int offset, string search, string? fromDate, string? toDate)
         {
             MD5Hash md5 = new MD5Hash();
             int userId = _checkUser.GetUserId();
@@ -72,7 +75,15 @@ namespace AppTest.Controllers
             {
                 PropertyNameCaseInsensitive = true
             });
+
             var listStudent = new List<StudentWithTestStatus>();
+
+            var culture = new System.Globalization.CultureInfo("vi-VN");
+            DateTime? fDate = string.IsNullOrEmpty(fromDate) ? null : DateTime.Parse(fromDate, culture);
+            DateTime? tDate = string.IsNullOrEmpty(toDate) ? null : DateTime.Parse(toDate, culture).AddDays(1).AddSeconds(-1);
+
+            if (students == null) return Ok(new { success = true, message = "không thấy danh sách", data = new List<StudentWithTestStatus>() });
+
             foreach (var s in students)
             {
                 var stu = new StudentWithTestStatus()
@@ -84,16 +95,31 @@ namespace AppTest.Controllers
                     namsinh = s.namsinh,
                     dienthoai = s.phhS_dienthoai
                 };
-                var result = _context.UserTests.Where(x => x.UserId == s.id && x.IsComplete == true);
-                if (result.Any())
+
+                var resultQuery = _context.UserTests.Where(x => x.UserId == s.id && x.IsComplete == true);
+
+                if (fDate.HasValue)
+                {
+                    resultQuery = resultQuery.Where(x => x.DateCreate >= fDate.Value);
+                }
+                if (tDate.HasValue)
+                {
+                    resultQuery = resultQuery.Where(x => x.DateCreate <= tDate.Value);
+                }
+
+                if (resultQuery.Any())
                 {
                     stu.HasTestResult = true;
-                    stu.NumberTest = result.Count();
-                    stu.DateTest = result.OrderByDescending(x => x.Id).FirstOrDefault().DateCreate;
+                    stu.NumberTest = resultQuery.Count();
+                    stu.DateTest = resultQuery.OrderByDescending(x => x.Id).FirstOrDefault().DateCreate;
+                    listStudent.Add(stu);
                 }
-                listStudent.Add(stu);
+              
+                else if (!fDate.HasValue && !tDate.HasValue)
+                {
+                    listStudent.Add(stu);
+                }
             }
-            if (students == null) return Ok(new { success = true, message = "không thấy danh sách", data = new List<StudentWithTestStatus>() });
 
             return Ok(new { success = true, message = "đã lấy danh sách thành công", data = listStudent });
         }
@@ -260,21 +286,19 @@ namespace AppTest.Controllers
         }
 
         [HttpGet]
+
+        // Nhận xét từ GV
         public async Task<IActionResult> LoadResultTestById(int studentId)
         {
             var user = await GetProfileStudent(studentId);
-            string description = $"<p class='fw-bolder mb-0'>Nhận xét chung:</p><p class='mb-0'>Xin chào <b>{user.ten}</b>, Dưới đây là kết quả bài kiểm tra năng lực về các kỹ năng:";
+            string description = "";
             var userTest = _context.UserTests.Where(x => x.UserId == studentId && x.IsComplete ==true).OrderByDescending(x => x.Id).FirstOrDefault();
             if (userTest == null)
             {
                 return Json(new { success = false, message = "Không tìm thấy bài kiểm tra đã hoàn thành cho học viên này." });
             }
 
-            if (!string.IsNullOrWhiteSpace(userTest.GeneralComment))
-            {
-                var safeComment = System.Net.WebUtility.HtmlEncode(userTest.GeneralComment);
-                description += $"<br><p class='mb-0'><b>Nhận xét của giáo viên:</b> {safeComment}</p>";
-            }
+            string handwritingComment = userTest.GeneralComment ?? "";
             var categories = await _context.QuestionCategories
                                            .Where(x => x.Enable == true)
                                            .OrderBy(x => x.DisplayOrder)
@@ -334,7 +358,7 @@ namespace AppTest.Controllers
                     if (res != null && !string.IsNullOrWhiteSpace(res.Description))
                     {
                         var categoryName = categories.FirstOrDefault(c => c.Id == paperResult.CategoryId)?.Name ?? $"Category {paperResult.CategoryId}";
-                        individualDescriptions.Add($"<br><i class='ti ti-arrow-narrow-right'></i> {categoryName}: {res.Description}.");
+                        individualDescriptions.Add($"• <b>{categoryName}:</b> {res.Description}.");
                     }
                 }
             }
@@ -366,7 +390,7 @@ namespace AppTest.Controllers
                                         .FirstOrDefaultAsync();
                 if (res != null && !string.IsNullOrWhiteSpace(res.Description))
                 {
-                    individualDescriptions.Add($"<i class='ti ti-arrow-narrow-right'></i> {category.Name}: {res.Description}.");
+                    individualDescriptions.Add($"• <b>{category.Name}:</b> {res.Description}.");
                 }
             }
 
@@ -379,7 +403,7 @@ namespace AppTest.Controllers
             {
                 description += "<p>Hiện không có nhận xét chi tiết kết quả của học viên.</p>";
             }
-            return Json(new { success = true,testId= userTest.Id, student = user, data = dataForChart,categories = categoryNames, description });
+            return Json(new { success = true,testId= userTest.Id, student = user, data = dataForChart,categories = categoryNames, description, handwritingComment });
         }
         /// <summary>Ưu tiên điểm thi giấy; nếu không, trung bình điểm online theo danh mục.</summary>
         private async Task<int> CalculateCategoryPercentage(int sessionId, int categoryId)
