@@ -62,7 +62,7 @@
         padding: 16px 20px 20px 20px;
         box-sizing: border-box;
     }
-    /* MODIFIED: Lưới đáp án tự điều chỉnh kích thước */
+
     .answers-grid {
         display: grid;
         grid-template-columns: repeat(2, auto); 
@@ -71,18 +71,110 @@
         justify-content: center; 
     }
 
+
     @@media (max-width: 768px) {
         .scroll-box {
             width: 100%;
             height: calc(100vh - 120px);
         }
+
+
         .answers-grid {
-            grid-template-columns: repeat(2, auto);
-            gap: 10px;
+            display: grid;
+            gap: 15px; 
+            justify-content: center;
+            justify-items: center;
+        }
+
+
+        .answers-grid:has(.answer-item:nth-child(3)) {
+            grid-template-columns: repeat(2, 1fr);
+            width: 100%;
+        }
+
+        .answers-grid:not(:has(.answer-item:nth-child(3))) {
+            grid-template-columns: 1fr;
+        }
+
+        .answer-item:first-child:nth-last-child(2),
+        .answer-item:first-child:nth-last-child(2) ~ .answer-item {
+            width: 60vw !important;
+            max-width: 280px !important;
+            aspect-ratio: 1 / 1 !important;
+        }
+
+
+        .answer-item:first-child:nth-last-child(4),
+        .answer-item:first-child:nth-last-child(4) ~ .answer-item {
+            width: 42vw !important;
+            aspect-ratio: 1 / 1 !important;
+        }
+
+
+        #quiz-container:has(#questionImage:not(.d-none)) .answers-grid:has(.answer-item:nth-child(3)) {
+            gap: 10px; 
+        }
+
+        #quiz-container:has(#questionImage:not(.d-none)) .answer-item:first-child:nth-last-child(4),
+        #quiz-container:has(#questionImage:not(.d-none)) .answer-item:first-child:nth-last-child(4) ~ .answer-item {
+            width: 44vw !important;
+            height: auto !important;
+            aspect-ratio: 1.5 / 1 !important; 
+            min-width: 0;
+            padding: 8px;
+        }
+
+        .answers-grid:has(.answer-item:nth-child(3)) .answer-text {
+            font-size: 1.6rem !important;
+        }
+
+        #questionImage {
+            max-height: 35vh !important;
+        }
+        .result-bg-box {
+            width: 90vw !important;       
+            height: 45vh !important;       
+            max-height: 450px;             
+            
+            background-size: 100% 100% !important;
+            position: relative;
+            left: 50%;
+            transform: translateX(-50%);
+            
+            margin-top: 5vh;               
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .buddy-img-result {
+            max-width: 85% !important; 
+            height: auto;
+            margin-bottom: 5px;
+            margin-top: -20px; 
+        }
+
+        .btn-custom-img {
+            width: 280px !important; 
+            height: 65px !important;
+            font-size: 1.1rem !important; 
+            letter-spacing: 0;
+        }
+
+        .result-bg-box .d-flex.flex-wrap {
+            gap: 10px !important;
+            flex-direction: column; 
+            align-items: center;
+        }
+
+        #totalTimeLabel {
+            font-size: 1.1rem !important;
+            margin-bottom: 15px !important;
         }
     }
-
-    /* MODIFIED: Ô đáp án vuông - Mặc định cho trường hợp 4 đáp án */
+ 
     .answer-item {
         display: flex;
         flex-direction: column;
@@ -103,11 +195,11 @@
         overflow: hidden;
     }
 
-    /* MODIFIED HERE: Logic đặc biệt khi CHỈ CÓ 2 ĐÁP ÁN 
+    /* Logic đặc biệt khi CHỈ CÓ 2 ĐÁP ÁN 
        (Tự động phóng to khung hình vuông) */
     .answer-item:first-child:nth-last-child(2),
     .answer-item:first-child:nth-last-child(2) ~ .answer-item {
-        width: 42vh; /* Phóng to lên khoảng 1.5 lần so với mặc định */
+        width: 42vh; 
         max-width: 45vw;
     }
 
@@ -359,23 +451,29 @@
         text-align: center !important;
     }
 </style>
-<div class="d-flex align-items-center mb-2 sticky-top" style="background:#51a347;padding:10px 30px;z-index:1;">
-    <div class="flex-shrink-0">
-        <a href="/"><img src="/images/logo.png" alt="Sơn Hà Lê" class="img-fluid ms-5 me-3" style="height: 40px;"></a>
-        <img src="/images/avatar.png" alt="Sơn Hà Lê" class="img-fluid rounded-circle border border-white border-3" style="width: 40px;">
+
+<div class="d-flex align-items-center mb-2 sticky-top" style="background:#51a347; padding: 10px 10px 2px 10px; z-index:1; min-height: 60px;">
+    <div class="flex-shrink-0 d-flex align-items-center">
+        <a href="/"><img src="/images/logo.png" alt="Logo" class="img-fluid me-2" style="height: 30px;"></a>
+        <img src="/images/avatar.png" alt="Avatar" class="img-fluid rounded-circle border border-white border-2" style="width: 45px; height: 45px;">
     </div>
-    <div class="flex-grow-1 ms-3">
-        <div>
-            <h5 class="mb-0 fs-6 me-2 text-white">👋 Xin chào, <b>@TempData["name"]</b></h5>
-            <p class="mb-0 text-white"> let's play quiz</p>
+
+    <div class="flex-grow-1 overflow-hidden text-center"> 
+        <div style="line-height: 1.3; padding-bottom: 2px;">
+            <h5 class="mb-0 text-white" style="font-size: 0.85rem;">
+                👋 Xin chào, 
+                <b class="d-block text-truncate" style="font-size: 0.95rem;">@TempData["name"]</b>
+            </h5>
+            <p class="mb-0 text-white" style="font-size: 0.75rem; opacity: 0.9;">let's play quiz</p>
         </div>
     </div>
-    <div class="flex-grow-1 ms-5 text-end">
-                    <a id="btn-quiz-back" href="/" class="btn btn-sm btn-warning fw-bolder">
-                        <i class="ti ti-arrow-left"></i> Quay về
-                    </a>
-        <a href="javascript:signout()" class="btn btn-sm btn-rounded" style="background:#6cbf45;color:#fff;border:1px solid #fff;">
-            Đăng xuất <i class="ti ti-logout"></i>
+
+    <div class="flex-shrink-0 align-self-end mb-1 d-flex gap-1">
+        <a id="btn-quiz-back" href="/" class="btn btn-sm btn-warning fw-bolder" style="font-size: 0.7rem; padding: 4px 8px;">
+            <i class="ti ti-arrow-left"></i> <span class="d-none d-sm-inline">Quay về</span>
+        </a>
+        <a href="javascript:signout()" class="btn btn-sm btn-rounded" style="background:#6cbf45; color:#fff; border:1px solid #fff; font-size: 0.7rem; padding: 4px 8px;">
+             <span class="d-none d-sm-inline">Đăng xuất</span> <i class="ti ti-logout"></i>
         </a>
     </div>
 </div>
