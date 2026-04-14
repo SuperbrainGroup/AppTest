@@ -308,7 +308,6 @@
                     <div class="exam-section-title">NỘI DUNG CÂU HỎI</div>
                 </div>
                 <div class="exam-q-compact-wrap">${questionsHtml}</div>
-                <p class="exam-footer-note">Phiếu đề được xuất từ hệ thống · ${escapeHtml(merged.unitName)} · ${escapeHtml(today)}</p>
             </div>
         `;
     }
@@ -371,13 +370,13 @@
            PHẦN ĐỀ THI
            ========================================= */
         .exam-print-layout { display: block; box-sizing: border-box; } 
-        .exam-print-top { margin-bottom: 10px; }
+        .exam-print-top { margin-bottom: 10px; padding: 30px 0 0 0;}
         .exam-print-title { text-align: center; font-size: 24px; font-weight: 800; color: #183153; margin-bottom: 10px; letter-spacing: 0.5px; }
         .exam-student-row-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 15px; font-size: 14px; margin-bottom: 0px; }
         .exam-student-row-3 > div { border: 1px solid #e2e8f0; padding: 10px 12px; border-radius: 6px; background: #f8fafc; }
         .exam-info-lbl { display: block; font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 4px; }
         .exam-print-a4 .exam-section-title { font-size: 16px; margin: 10px 0 15px 0; font-weight: 800; color: #183153; text-transform: uppercase; }
-        .exam-q-compact-wrap { display: flex; flex-direction: column; gap: 5px; }
+        .exam-q-compact-wrap { display: flex; flex-direction: column; gap: 15px; }
         .exam-q-compact { border: 1px solid #e5e7eb; padding: 10px; border-radius: 8px; background: #fcfdff; page-break-inside: avoid; }
         .exam-q-line { display: flex; flex-direction: row; align-items: baseline; justify-content: space-between; gap: 10px; }
         .exam-q-main { flex: 1 1 auto; min-width: 0; font-size: 18px; line-height: 1.5; color: #253247; }
