@@ -253,6 +253,7 @@ $(document).ready(function () {
     $(document).on("click", "#btn-add", function () {
         $("#createId").val(0);
         $(".form-control").val("");
+        $("#displayOrder").val(0); 
         $("#createLop").val("1");
         $createModal.modal("show");
         $("#audioPreviewPlayer").attr("src", "");
@@ -283,6 +284,7 @@ $(document).ready(function () {
                     $("#createId").val(data.question.id);
                     $("#createName").val(data.question.name);
                     $("#createCategoryId").val(data.question.categoryId);
+                    $("#displayOrder").val(data.question.displayOrder);
                     var lv = data.question.lop != null ? data.question.lop : data.question.Lop;
                     $("#createLop").val(lv != null ? String(lv) : "1");
                     $("#maxPoint").val(data.question.maxPoint);

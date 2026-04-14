@@ -88,6 +88,7 @@ namespace AppTest.Areas.Admin.Controllers
 
             var questions = await question
                                 .OrderBy(x => x.Lop)
+                                .ThenBy(x => x.DisplayOrder)
                                 .ThenBy(x => x.Id)
                                 .Include(q => q.Answers)
                                 .Include(q => q.Category)
@@ -96,6 +97,7 @@ namespace AppTest.Areas.Admin.Controllers
                                     q.Id,
                                     q.Name,
                                     q.OnPaper,
+                                    displayOrder = q.DisplayOrder,
                                     Image = q.Image,
                                     Audio = q.Audio,
                                     maxPoint = q.MaxPoint,
@@ -127,7 +129,7 @@ namespace AppTest.Areas.Admin.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> SaveChange(int id, int categoryId, string name, int lop, int maxPoint, IFormFile image, IFormFile audio, bool onPaper) 
+        public async Task<IActionResult> SaveChange(int id, int categoryId, string name, int lop, int maxPoint, IFormFile image, IFormFile audio, bool onPaper, int displayOrder) 
         {
             try
             {
@@ -184,6 +186,7 @@ namespace AppTest.Areas.Admin.Controllers
                         Lop = lop,
                         AgeGroup = null,
                         CategoryId = categoryId,
+                        DisplayOrder = displayOrder,
                         Name = name,
                         MaxPoint = maxPoint,
                         Iduser = 1,
@@ -209,6 +212,7 @@ namespace AppTest.Areas.Admin.Controllers
                     question.CategoryId = categoryId;
                     question.MaxPoint = maxPoint;
                     question.OnPaper = onPaper; 
+                    question.DisplayOrder = displayOrder;
 
                     if (imageUrl != null)
                     {

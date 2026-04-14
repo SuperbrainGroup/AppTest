@@ -1,4 +1,5 @@
 using AppTest.Models;
+using AppTest.Helper;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 
@@ -52,7 +53,11 @@ namespace AppTest.Services
                     return null;
                 }
 
-                int lop = Math.Clamp(student.lop, -2, 6);
+                if (!LopMapper.TryConvertManagementLopToAppLop(student.lop, out int lop))
+                {
+                    return null;
+                }
+
                 return new User
                 {
                     Id = student.idhocvien,

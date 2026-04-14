@@ -93,13 +93,21 @@ namespace AppTest.Areas.Admin.Controllers
                     catId = g.Key.catId,
                     sumEarned = g.Sum(x => x.sumEarned),
                     sumMax = g.Sum(x => x.sumMax)
-                }).ToList();
+                })
+                .Where(x => x.classKey != null && x.classKey != 0)
+                .ToList();
 
-            var classKeys = allMergedResults.Select(x => x.classKey).Distinct().OrderBy(l => l ?? 0).ToList();
+            var classKeys = allMergedResults.Select(x => x.classKey)
+                .Distinct()
+                .OrderBy(l => l ?? 0)
+                .ToList();
+
             var courses = classKeys.Select(l => new {
                 key = l?.ToString() ?? "0",
-                label = (l == null || l == 0) ? "Chưa lớp" : $"Lớp {l}"
-            }).ToList();
+                label = LopMapper.ToDisplayText(l ?? 0)
+            })
+            .Where(c => c.key != "0" && c.label != "Chưa chọn lớp")
+            .ToList();
 
             var percentMap = new Dictionary<string, int>();
             foreach (var row in allMergedResults)
@@ -114,8 +122,8 @@ namespace AppTest.Areas.Admin.Controllers
                 categoryId = cat.id,
                 name = cat.name,
                 color = string.IsNullOrWhiteSpace(cat.color) ? "#198754" : cat.color, 
-                data = classKeys.Select(l => {
-                    string key = (l?.ToString() ?? "0") + "|" + cat.id;
+                data = courses.Select(c => {
+                    string key = (c.key ?? "0") + "|" + cat.id;
                     return percentMap.ContainsKey(key) ? percentMap[key] : 0;
                 }).ToList()
             }).ToList();

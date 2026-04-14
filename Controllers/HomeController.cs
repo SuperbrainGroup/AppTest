@@ -98,9 +98,9 @@ namespace AppTest.Controllers
             }
 
             int lop = user.lop;
-            if (lop < 1 || lop > 12)
+            if (!LopMapper.IsValidAppLop(lop))
             {
-                return Json(new { success = false, message = "Lớp học viên không hợp lệ (cần 1–12). Vui lòng kiểm tra dữ liệu trên hệ thống." });
+                return Json(new { success = false, message = "Lớp học viên không hợp lệ. Vui lòng kiểm tra dữ liệu trên hệ thống." });
             }
 
             var questions = await _context.Questions
@@ -159,9 +159,9 @@ namespace AppTest.Controllers
             }
 
             int lop = user.lop;
-            if (lop < 1 || lop > 12)
+            if (!LopMapper.IsValidAppLop(lop))
             {
-                return Ok(new { success = false, message = "Lớp học viên không hợp lệ (1–12)." });
+                return Ok(new { success = false, message = "Lớp học viên không hợp lệ. Vui lòng kiểm tra dữ liệu trên hệ thống." });
             }
 
             int courseId = user.courseId;
@@ -512,7 +512,11 @@ namespace AppTest.Controllers
                         return null;
                     }
 
-                    int lop = Math.Clamp(student.lop, 1, 12);
+                    if (!LopMapper.TryConvertManagementLopToAppLop(student.lop, out int lop))
+                    {
+                        Console.WriteLine("Lớp học viên không hợp lệ từ API quản lý: " + student.lop);
+                        return null;
+                    }
 
                     var user = new User()
                     {

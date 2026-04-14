@@ -840,7 +840,11 @@ namespace AppTest.Controllers
                         return null;
                     }
 
-                    int lop = Math.Clamp(student.lop, 1, 12);
+                    if (!LopMapper.TryConvertManagementLopToAppLop(student.lop, out int lop))
+                    {
+                        Console.WriteLine("Lớp học viên không hợp lệ từ API quản lý: " + student.lop);
+                        return null;
+                    }
                     var user = new User()
                     {
                         Id = student.idhocvien,
