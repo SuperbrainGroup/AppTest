@@ -160,11 +160,18 @@ $(document).ready(function () {
         });
     });
 
+
+    $(document).on("input", "#settingDescription", function () {
+        const charCount = $(this).val().length;
+        $("#descriptionCharCount").text(charCount);
+    });
+
     $(document).on("click", ".btn-addSetting", function () {
         const id = $(this).data("id");
         $("#categoryId").val(id);
         $("#settingId").val(0);
         $(".form-control").val("");
+        $("#descriptionCharCount").text(0); // Reset đếm ký tự
         $("#settingModal").modal("show");
     });
 
@@ -181,6 +188,7 @@ $(document).ready(function () {
                     $("#settingFrom").val(data.setting.fromPoint);
                     $("#settingTo").val(data.setting.toPoint);
                     $("#settingDescription").val(data.setting.description);
+                    $("#descriptionCharCount").text(data.setting.description?.length || 0);
                     $("#settingModal").modal("show");
                 }
             },

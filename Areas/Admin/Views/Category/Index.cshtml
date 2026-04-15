@@ -147,8 +147,11 @@
                         <input type="number" id="settingTo" name="toPoint" class="form-control">
                     </div>
                     <div class="mb-3">
-                        <label>Mô tả</label>
-                        <textarea type="text" id="settingDescription" name="description" class="form-control"></textarea>
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label>Mô tả</label>
+                            <small class="text-muted"><span id="descriptionCharCount">0</span>/275</small>
+                        </div>
+                        <textarea type="text" id="settingDescription" name="description" class="form-control" maxlength="275"></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">

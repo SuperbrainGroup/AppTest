@@ -186,6 +186,9 @@ $(document).ready(function () {
                     $("#showlist_input").html(html);
                     $("#generalComment").val((response.generalComment || "").toString());
                     
+                    const currentCharCount = (response.generalComment || "").toString().length;
+                    $("#charCount").text(currentCharCount);
+                    
                     updateTotalScore();
                     
                     $(document).on("input", ".paper-question-input", function () {
@@ -201,6 +204,11 @@ $(document).ready(function () {
                 console.error("Lỗi tải câu hỏi: " + error);
             }
         });
+    });
+    
+    $(document).on("input", "#generalComment", function () {
+        const charCount = $(this).val().length;
+        $("#charCount").text(charCount);
     });
     
     function updateTotalScore() {
