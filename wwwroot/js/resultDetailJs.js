@@ -179,7 +179,7 @@ $(document).ready(function () {
             data: { testId: testId },
             success: function (res) {
                 if (!res || !res.success) {
-                    $("#attemptQuestionsBody").html(`<tr><td colspan="4" class="text-center text-danger">Không có dữ liệu phiên làm bài.</td></tr>`);
+                    $("#attemptQuestionsBody").html(`<tr><td colspan="5" class="text-center text-danger">Không có dữ liệu phiên làm bài.</td></tr>`);
                     return;
                 }
 
@@ -201,8 +201,12 @@ $(document).ready(function () {
                             : `<span class="badge text-bg-danger">Sai</span>`;
                         const earned = q.earnedPoints ?? 0;
                         const max = q.maxPoint ?? 0;
+                        const categoryDot = q.categoryColor
+                            ? `<span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${escapeHtml(q.categoryColor)};margin-right:6px;vertical-align:middle;"></span>`
+                            : "";
                         rows += `<tr>
                                     <td class="text-center">${i + 1}</td>
+                                    <td class="small text-start">${categoryDot}${escapeHtml(q.categoryName || "")}</td>
                                     <td class="small text-start">${escapeHtml(q.questionName || "")}</td>
                                     <td class="text-center">${escapeHtml(String(earned))}/${escapeHtml(String(max))}</td>
                                     <td class="text-center">${badge}</td>
@@ -210,7 +214,7 @@ $(document).ready(function () {
                     });
                     $("#attemptQuestionsBody").html(rows);
                 } else {
-                    $("#attemptQuestionsBody").html(`<tr><td colspan="4" class="text-center text-muted">Chưa có dữ liệu câu hỏi.</td></tr>`);
+                    $("#attemptQuestionsBody").html(`<tr><td colspan="5" class="text-center text-muted">Chưa có dữ liệu câu hỏi.</td></tr>`);
                 }
 
                 const totals = res.categoryTotals || [];
@@ -247,7 +251,7 @@ $(document).ready(function () {
                 }
             },
             error: function () {
-                $("#attemptQuestionsBody").html(`<tr><td colspan="4" class="text-center text-danger">Lỗi tải chi tiết phiên.</td></tr>`);
+                $("#attemptQuestionsBody").html(`<tr><td colspan="5" class="text-center text-danger">Lỗi tải chi tiết phiên.</td></tr>`);
             }
         });
     }

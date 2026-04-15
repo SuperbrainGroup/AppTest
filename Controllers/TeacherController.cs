@@ -255,13 +255,17 @@ namespace AppTest.Controllers
                 return Ok(new { success = true, message = "Đã lưu nhận xét thành công." });
             }
 
-            // Xóa kết quả cũ cho phiên này để tránh trùng khóa (SessionId, QuestionId).
-            var existing = await _context.questionResults
+  
+            var questionIdsFromRequest = request.Results.Select(r => r.QuestionId).ToList();
+            var existingPaperResults = await _context.questionResults
                 .Where(qr => qr.SessionId == sessionId)
+                .Include(qr => qr.Question)
+                .Where(qr => qr.Question.OnPaper == true)
                 .ToListAsync();
-            if (existing.Any())
+            
+            if (existingPaperResults.Any())
             {
-                _context.questionResults.RemoveRange(existing);
+                _context.questionResults.RemoveRange(existingPaperResults);
             }
 
             foreach (var item in request.Results)
@@ -670,10 +674,14 @@ namespace AppTest.Controllers
                 .ThenInclude(q => q.Category)
                 .ToListAsync();
 
-            var orderedResults = results
-                .OrderBy(r => r.Question?.Category?.DisplayOrder ?? 0)
+
+            var resultsToDisplay = results
+                .OrderBy(r => r.Question?.OnPaper == true ? 1 : 0) // Online (false) trước, Giấy (true) sau
+                .ThenBy(r => r.Question?.Category?.DisplayOrder ?? 0)
                 .ThenBy(r => r.QuestionId)
                 .ToList();
+
+            var orderedResults = resultsToDisplay;
 
             var questionDetails = orderedResults.Select(r =>
             {
@@ -708,6 +716,30 @@ namespace AppTest.Controllers
                     maxPoint = g.Sum(x => x.MaxPoint ?? x.Question?.MaxPoint ?? 0)
                 })
                 .ToList();
+
+            // FALLBACK: Nếu category không có trong questionResults, lấy từ UserTestDetails (online tests)
+            var userTestDetails = await _context.UserTestDetails
+                .Where(d => d.ResultId == testId)
+                .ToListAsync();
+
+            foreach (var category in categories)
+            {
+                // Kiểm tra xem category này có trong rawTotals không
+                if (!rawTotals.Any(rt => rt.categoryId == category.Id))
+                {
+                    // Nếu không, lấy từ UserTestDetails
+                    var detailsForCategory = userTestDetails.Where(d => d.CategoryId == category.Id).ToList();
+                    if (detailsForCategory.Any())
+                    {
+                        rawTotals.Add(new
+                        {
+                            categoryId = category.Id,
+                            earnedPoints = detailsForCategory.Sum(d => d.PointEarned),
+                            maxPoint = detailsForCategory.Sum(d => d.TotalPoint)
+                        });
+                    }
+                }
+            }
 
             var totalsByCat = rawTotals.ToDictionary(x => x.categoryId, x => x);
 
