@@ -161,19 +161,37 @@ $(document).ready(function () {
                     });
 
                     let html = ``;
+                    let totalMaxPoint = 0;
                     $.each(response.data, function (index, item) {
+                        totalMaxPoint += item.maxPoint;
                         const existingPoint = existingMap[String(item.id)];
                         const valueAttr = (existingPoint !== undefined && existingPoint !== null && !isNaN(parseInt(existingPoint)))
                             ? ` value="${parseInt(existingPoint)}"`
                             : "";
-                        html += `<div class="d-flex justify-content-between pb-3 mb-3 align-content-center" style="width:100%;border-bottom: 1px dashed #f1f1f1">
+                        html += `<div class="d-flex justify-content-between pb-3 mb-3 align-items-center" style="width:100%;border-bottom: 1px dashed #f1f1f1">
                                     <span class="text-success">Câu ${index + 1} (${item.maxPoint} điểm): ${item.name}</span>
-                                    <input type="number" id="point-${item.id}" class="form-control text-center" data-id="${item.id}" data-maxpoint="${item.maxPoint}" data-categoryid="${item.categoryId}" placeholder="..." style="max-width:70px;width:70px;"${valueAttr}>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <input type="number" id="point-${item.id}" class="form-control text-center paper-question-input" data-id="${item.id}" data-maxpoint="${item.maxPoint}" data-categoryid="${item.categoryId}" placeholder="0" style="max-width:70px;width:70px;"${valueAttr}>
+                                        <span class="fw-bold">/${item.maxPoint}</span>
+                                    </div>
                                 </div>`;
                     });
+                    html += `<div class="mt-4 p-3 bg-light rounded">
+                                <div class="d-flex justify-content-between align-items-center fw-bold">
+                                    <span>Tổng điểm:</span>
+                                    <span><span id="totalEarnedScore">0</span>/<span id="totalMaxScore">${totalMaxPoint}</span></span>
+                                </div>
+                            </div>`;
                     $("#sessionId").val(response.sessionId);
                     $("#showlist_input").html(html);
                     $("#generalComment").val((response.generalComment || "").toString());
+                    
+                    updateTotalScore();
+                    
+                    $(document).on("input", ".paper-question-input", function () {
+                        updateTotalScore();
+                    });
+                    
                     $("#nhapdiemModal").modal("show");
                 } else {
                     showNotification("Không tìm thấy câu hỏi!");
@@ -184,6 +202,18 @@ $(document).ready(function () {
             }
         });
     });
+    
+    function updateTotalScore() {
+        let totalEarned = 0;
+        $('#showlist_input .paper-question-input').each(function () {
+            const point = parseInt($(this).val());
+            if (!isNaN(point)) {
+                totalEarned += point;
+            }
+        });
+        $('#totalEarnedScore').text(totalEarned);
+    }
+    
     handleFormSubmit("#nhapdiemForm", function (form, submitButton, originalText) {
         const sessionId = parseInt($('#sessionId').val());
         const data = [];
