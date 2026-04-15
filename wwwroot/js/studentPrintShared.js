@@ -228,7 +228,7 @@
         const handwritingSection = handwritingComment ? `
             <div class="report-section">
                 <div class="report-section-title">Đánh giá bổ sung</div>
-                <div class="report-note" style="font-size: 16px !important;">
+                <div class="report-note" style="font-size: 14px !important;">
                     ${handwritingComment}
                 </div>
             </div>
@@ -257,7 +257,7 @@
 
                 <div class="report-section">
                     <div class="report-section-title">Đánh giá chung</div>
-                    <div class="report-note" style="font-size: 16px !important;">
+                    <div class="report-note" style="font-size: 14px !important;">
                         ${detailHtml}
                     </div>
                 </div>
@@ -330,8 +330,8 @@
            ========================================= */
         .report-section-title { 
             display: flex !important; align-items: center !important; gap: 10px !important;
-            margin: 10px 0 !important;
-            font-size: 16px !important; /* Khớp .exam-section-title */
+            margin: 5px 0 !important;
+            font-size: 14px !important; /* Khớp .exam-section-title */
             font-weight: 800 !important; 
             text-transform: uppercase !important; 
             color: #183153 !important; 
@@ -343,13 +343,13 @@
         .result-table-wrap table { width: 100% !important; border-collapse: collapse !important; }
         .result-table-wrap th { 
             background: #198754 !important; color: white !important; 
-            padding: 12px 8px !important; 
+            padding: 6px 4px !important; 
             font-size: 14px !important; 
             font-weight: 700 !important; 
             border: 1px solid #146c43 !important; 
         }
         .result-table-wrap td { 
-            border: 1px solid #dee2e6 !important; padding: 10px 8px !important; 
+            border: 1px solid #dee2e6 !important; padding: 6px 4px !important; 
             font-size: 14px !important; 
             text-align: center !important; 
         }
@@ -357,8 +357,8 @@
         /* Nhận xét */
         .report-note { 
             border: 1px solid #d7deea !important; border-radius: 12px !important; 
-            background: #fcfdff !important; padding: 15px 20px !important; 
-            font-size: 18px !important; 
+            background: #fcfdff !important; padding: 10px 15px !important; 
+            font-size: 14px !important; 
             line-height: 1.5 !important; 
             color: #253247 !important; 
         }
@@ -370,7 +370,7 @@
            PHẦN ĐỀ THI
            ========================================= */
         .exam-print-layout { display: block; box-sizing: border-box; } 
-        .exam-print-top { margin-bottom: 10px; padding: 30px 0 0 0;}
+        .exam-print-top { margin-bottom: 10px; padding: 20px 0 0 0;}
         .exam-print-title { text-align: center; font-size: 24px; font-weight: 800; color: #183153; margin-bottom: 10px; letter-spacing: 0.5px; }
         .exam-student-row-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 15px; font-size: 14px; margin-bottom: 0px; }
         .exam-student-row-3 > div { border: 1px solid #e2e8f0; padding: 10px 12px; border-radius: 6px; background: #f8fafc; }
@@ -425,7 +425,7 @@
         if (instance) instance.dispose();
 
         // Khởi tạo ECharts
-        instance = echarts.init(chartDom, null, { width: 600, height: 320 });
+        instance = echarts.init(chartDom, null, { width: 600, height: 290 });
 
         const seriesData = chartData.map(item => ({
             value: item.data,
@@ -436,8 +436,9 @@
             title: { text: "", left: "center" },
             tooltip: {},
             legend: {
+                show: false,
                 data: seriesData.map(x => x.name),
-                bottom: 25,
+                bottom: 5,
                 textStyle: {
                     fontFamily: '"Nunito Sans", sans-serif',
                     fontSize: 14,
@@ -445,8 +446,8 @@
                 }
             },
             radar: {
-                radius: "70%",
-                center: ['50%', '45%'],
+                radius: "75%",
+                center: ['50%', '50%'],
                 indicator: categories.map(name => ({
                     name: name,
                     max: 100
