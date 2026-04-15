@@ -28,7 +28,87 @@
 
     table {
         width: 100%;
-        border-collapse: collapse;
+        border-collapse: separate;
+        border-spacing: 0;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    table thead tr:first-child th:first-child {
+        border-top-left-radius: 10px;
+    }
+
+    table thead tr:first-child th:last-child {
+        border-top-right-radius: 10px;
+    }
+
+    table tbody tr:last-child td:first-child {
+        border-bottom-left-radius: 10px;
+    }
+
+    table tbody tr:last-child td:last-child {
+        border-bottom-right-radius: 10px;
+    }
+
+    /* Css cho bảng Chi tiết đúng/sai */
+    #attemptQuestionsBody {
+        display: table-row-group;
+    }
+
+    #attemptQuestionsBody tr td {
+        text-align: center;
+        vertical-align: middle;
+    }
+
+    #attemptQuestionsBody tr td:nth-child(2),
+    #attemptQuestionsBody tr td:nth-child(3) {
+        text-align: left;
+    }
+
+    .table-responsive table thead th {
+        text-align: center !important;
+        vertical-align: middle;
+    }
+
+    .table-responsive table {
+        border-radius: 10px;
+        overflow: hidden !important;
+    }
+
+    .table-responsive table thead {
+        overflow: hidden;
+    }
+
+    .table-responsive table thead tr:first-child th:first-child {
+        border-top-left-radius: 10px;
+    }
+
+    .table-responsive table thead tr:first-child th:last-child {
+        border-top-right-radius: 10px;
+    }
+
+    .table-responsive table tbody tr:last-child td:first-child {
+        border-bottom-left-radius: 10px;
+    }
+
+    .table-responsive table tbody tr:last-child td:last-child {
+        border-bottom-right-radius: 10px;
+    }
+
+    /* Bo tròn góc trên bảng và canh giữa tất cả th */
+    .table-responsive {
+        border-radius: 10px;
+        overflow: hidden !important;
+    }
+
+    #attemptQuestionsBody tr td {
+        text-align: center !important;
+        vertical-align: middle !important;
+    }
+
+    #attemptQuestionsBody tr td:nth-child(2),
+    #attemptQuestionsBody tr td:nth-child(3) {
+        text-align: left !important;
     }
 @* --------- *@
     /* MODIFIED: Ép màu xanh đậm và chữ trắng cho toàn bộ header table trong trang */
@@ -39,11 +119,25 @@
         top: 0;
         background-color: #198754 !important; /* Xanh chuẩn của hệ thống */
         color: #ffffff !important;            /* Chữ trắng tinh */
-        text-align: center;
+        text-align: center !important;
         border-color: #146c43 !important;
         z-index: 2;
         font-weight: 700;
         padding: 12px 8px !important;
+    }
+
+    .table-responsive table thead {
+        display: table-header-group;
+        border-radius: 10px 10px 0 0;
+        overflow: hidden;
+    }
+
+    .table-responsive .table-light th:first-child {
+        border-top-left-radius: 10px !important;
+    }
+
+    .table-responsive .table-light th:last-child {
+        border-top-right-radius: 10px !important;
     }
 
     /* MODIFIED: Làm nổi bật cột Kết quả và các chữ đúng/sai */
