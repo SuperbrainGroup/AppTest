@@ -361,6 +361,8 @@
             font-size: 14px !important; 
             line-height: 1.5 !important; 
             color: #253247 !important; 
+            text-align: justify;
+            text-justify: inter-word;
         }
         
         .result-radar-print { text-align: center !important; padding: 0px 0 !important; }
