@@ -71,6 +71,10 @@
         justify-content: center; 
     }
 
+    .answers-grid:has(.answer-item:nth-child(1)) .answer-item:has(img) .answer-text {
+        font-size: 1.5rem !important;
+    }
+
 
     @@media (max-width: 768px) {
         .scroll-box {
@@ -84,6 +88,9 @@
             gap: 15px; 
             justify-content: center;
             justify-items: center;
+            padding: 0 6px;
+            width: 100%;
+            box-sizing: border-box;
         }
 
 
@@ -106,7 +113,8 @@
 
         .answer-item:first-child:nth-last-child(4),
         .answer-item:first-child:nth-last-child(4) ~ .answer-item {
-            width: 42vw !important;
+            width: 100%;
+            max-width: 40vw;
             aspect-ratio: 1 / 1 !important;
         }
 
@@ -126,6 +134,10 @@
 
         .answers-grid:has(.answer-item:nth-child(3)) .answer-text {
             font-size: 1.6rem !important;
+        }
+
+        .answers-grid:has(.answer-item:nth-child(3)) .answer-item:has(img) .answer-text {
+            font-size: 1rem !important;
         }
 
         #questionImage {
