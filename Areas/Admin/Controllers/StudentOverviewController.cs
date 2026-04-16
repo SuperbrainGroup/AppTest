@@ -22,7 +22,7 @@ namespace AppTest.Areas.Admin.Controllers
 
         [HttpGet]
         [Route("/admin/api/student-overview/list")]
-        public async Task<IActionResult> List(int limit = 50, int offset = 0, string? search = null)
+        public async Task<IActionResult> List(int limit = 50, int offset = 0, string? search = null, string? fromDate = null, string? toDate = null)
         {
             try
             {
@@ -30,7 +30,7 @@ namespace AppTest.Areas.Admin.Controllers
                 var adminProfile = await _studentOverviewService.GetStaffProfileAsync(userId); // MODIFIED: Đổi từ Student sang Staff
                 int idChiNhanh = adminProfile?.idChiNhanh ?? 0;
 
-                var students = await _studentOverviewService.GetAllTestedStudentsAsync(idChiNhanh, search, offset, limit);
+                var students = await _studentOverviewService.GetAllTestedStudentsAsync(idChiNhanh, search, offset, limit, fromDate, toDate);
                 return Ok(new { success = true, message = "Đã lấy danh sách thành công", data = students });
             }
             catch (Exception ex)

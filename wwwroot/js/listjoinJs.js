@@ -9,6 +9,29 @@ $(document).ready(function () {
     let lastRadarCategories = [];
     let lastRadarChartData = [];
 
+    // Handle date input placeholder visibility
+    function updateDateInputPlaceholder(inputElement) {
+        const wrapper = inputElement.closest('.date-input-wrapper');
+        if (wrapper) {
+            if (inputElement.value) {
+                wrapper.classList.add('has-value');
+                inputElement.classList.add('has-value');
+            } else {
+                wrapper.classList.remove('has-value');
+                inputElement.classList.remove('has-value');
+            }
+        }
+    }
+
+    // Initialize date inputs
+    $('#fromDate, #toDate').on('change', function() {
+        updateDateInputPlaceholder(this);
+    }).on('click', function() {
+        this.showPicker();
+    }).each(function() {
+        updateDateInputPlaceholder(this);
+    });
+
     function escapeHtml(value) {
         return String(value ?? "")
             .replace(/&/g, "&amp;")
@@ -49,7 +72,9 @@ $(document).ready(function () {
             data: {
                 limit: limit,
                 offset: (currentPage - 1) * limit,
-                search: $("#searchInput").val()
+                search: $("#searchInput").val(),
+                fromDate: $("#fromDate").val(),
+                toDate: $("#toDate").val()
             },
             success: function (response) {
                 if (!response.success) {
@@ -117,6 +142,30 @@ $(document).ready(function () {
         currentPage = 1;
         loadStudents();
     }, 700));
+
+    $("#fromDate").on("change", function () {
+        updateDateInputPlaceholder(this);
+        currentPage = 1;
+        loadStudents();
+    });
+
+    $("#toDate").on("change", function () {
+        updateDateInputPlaceholder(this);
+        currentPage = 1;
+        loadStudents();
+    });
+
+    $("#btnReset").on("click", function () {
+        $("#searchInput").val("");
+        const fromDateInput = document.getElementById("fromDate");
+        const toDateInput = document.getElementById("toDate");
+        fromDateInput.value = "";
+        toDateInput.value = "";
+        updateDateInputPlaceholder(fromDateInput);
+        updateDateInputPlaceholder(toDateInput);
+        currentPage = 1;
+        loadStudents();
+    });
 
     document.getElementById("prevPage").addEventListener("click", () => {
         if (currentPage > 1) {

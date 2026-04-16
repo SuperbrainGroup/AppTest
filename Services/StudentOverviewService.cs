@@ -9,7 +9,7 @@ namespace AppTest.Services
     {
         Task<User?> GetStudentProfileAsync(int userId);
         Task<User?> GetStaffProfileAsync(int userId);
-        Task<List<StudentWithTestStatus>> GetAllTestedStudentsAsync(int idChiNhanh, string? search, int offset, int limit);
+        Task<List<StudentWithTestStatus>> GetAllTestedStudentsAsync(int idChiNhanh, string? search, int offset, int limit, string? fromDate = null, string? toDate = null);
         Task<PrintExamPayload> GetPrintExamPayloadAsync(int studentId);
         Task<ResultDetailPayload> GetResultDetailPayloadAsync(int studentId);
         Task<RadarChartPayload> GetRadarChartPayloadAsync(int studentId);
@@ -104,7 +104,7 @@ namespace AppTest.Services
         }
 
         // MODIFIED: Cập nhật chữ ký hàm thêm idChiNhanh và đổi logic sang Student-centric
-        public async Task<List<StudentWithTestStatus>> GetAllTestedStudentsAsync(int idChiNhanh, string? search, int offset, int limit)
+        public async Task<List<StudentWithTestStatus>> GetAllTestedStudentsAsync(int idChiNhanh, string? search, int offset, int limit, string? fromDate = null, string? toDate = null)
         {
             // 1. Lấy danh sách học viên từ API theo chi nhánh
             string apiUrl = $"http://45.119.82.38:6969/api/Students/GetStudentByChiNhanh/{idChiNhanh}?limit={limit}&offset={offset}&search={search ?? ""}";
@@ -122,27 +122,63 @@ namespace AppTest.Services
 
             var enriched = new List<StudentWithTestStatus>();
 
+            // Parse date filters
+            var culture = new System.Globalization.CultureInfo("vi-VN");
+            DateTime? fDate = string.IsNullOrEmpty(fromDate) ? null : DateTime.Parse(fromDate, culture);
+            DateTime? tDate = string.IsNullOrEmpty(toDate) ? null : DateTime.Parse(toDate, culture).AddDays(1).AddSeconds(-1);
+
             // 2. Duyệt danh sách từ API và kiểm tra bài test tại DB local
             foreach (var s in studentsApi)
             {
                 var testQuery = _context.UserTests
-                    .Where(x => x.UserId == s.id && x.IsComplete == true)
-                    .OrderByDescending(x => x.DateCreate);
+                    .Where(x => x.UserId == s.id && x.IsComplete == true);
+
+                // Apply date filters if provided
+                if (fDate.HasValue)
+                {
+                    testQuery = testQuery.Where(x => x.DateCreate >= fDate.Value);
+                }
+                if (tDate.HasValue)
+                {
+                    testQuery = testQuery.Where(x => x.DateCreate <= tDate.Value);
+                }
+
+                testQuery = testQuery.OrderByDescending(x => x.DateCreate);
 
                 var hasTest = await testQuery.AnyAsync();
                 
-                enriched.Add(new StudentWithTestStatus
+                // Only add student if they have a test result matching the date filter
+                if (hasTest)
                 {
-                    Id = s.id,
-                    mahs = s.mahs,
-                    ten = s.ten ?? string.Empty,
-                    Email = s.email ?? string.Empty,
-                    dienthoai = s.phhS_dienthoai ?? string.Empty,
-                    namsinh = s.namsinh,
-                    HasTestResult = hasTest,
-                    NumberTest = hasTest ? await testQuery.CountAsync() : 0,
-                    DateTest = hasTest ? (await testQuery.FirstOrDefaultAsync())?.DateCreate : null
-                });
+                    enriched.Add(new StudentWithTestStatus
+                    {
+                        Id = s.id,
+                        mahs = s.mahs,
+                        ten = s.ten ?? string.Empty,
+                        Email = s.email ?? string.Empty,
+                        dienthoai = s.phhS_dienthoai ?? string.Empty,
+                        namsinh = s.namsinh,
+                        HasTestResult = true,
+                        NumberTest = await testQuery.CountAsync(),
+                        DateTest = (await testQuery.FirstOrDefaultAsync())?.DateCreate
+                    });
+                }
+                // If no date filter is applied, include all students
+                else if (!fDate.HasValue && !tDate.HasValue)
+                {
+                    enriched.Add(new StudentWithTestStatus
+                    {
+                        Id = s.id,
+                        mahs = s.mahs,
+                        ten = s.ten ?? string.Empty,
+                        Email = s.email ?? string.Empty,
+                        dienthoai = s.phhS_dienthoai ?? string.Empty,
+                        namsinh = s.namsinh,
+                        HasTestResult = false,
+                        NumberTest = 0,
+                        DateTest = null
+                    });
+                }
             }
 
             return enriched;
