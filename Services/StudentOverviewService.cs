@@ -14,6 +14,7 @@ namespace AppTest.Services
         Task<ResultDetailPayload> GetResultDetailPayloadAsync(int studentId);
         Task<RadarChartPayload> GetRadarChartPayloadAsync(int studentId);
         Task<ComparisonChartPayload> GetComparisonChartPayloadAsync(int studentId);
+        Task<AttemptDetailsPayload> GetAttemptDetailsPayloadAsync(int testId);
     }
 
     public class StudentOverviewService : IStudentOverviewService
@@ -454,6 +455,116 @@ namespace AppTest.Services
 
             return (int)Math.Round(Math.Min(100, Math.Max(0, finalCategoryPercent)));
         }
+
+        public async Task<AttemptDetailsPayload> GetAttemptDetailsPayloadAsync(int testId)
+        {
+            var attempt = await _context.UserTests.FirstOrDefaultAsync(x => x.Id == testId);
+            if (attempt == null)
+            {
+                throw new Exception("Không tìm thấy phiên làm bài.");
+            }
+
+            var categories = await _context.QuestionCategories
+                .Where(x => x.Enable == true)
+                .OrderBy(x => x.DisplayOrder)
+                .ToListAsync();
+
+            var results = await _context.questionResults
+                .Where(qr => qr.SessionId == testId)
+                .Include(qr => qr.Question)
+                .ThenInclude(q => q.Category)
+                .ToListAsync();
+
+            var resultsToDisplay = results
+                .OrderBy(r => r.Question?.OnPaper == true ? 1 : 0)
+                .ThenBy(r => r.Question?.Category?.DisplayOrder ?? 0)
+                .ThenBy(r => r.QuestionId)
+                .ToList();
+
+            var orderedResults = resultsToDisplay;
+
+            var questionDetails = orderedResults.Select(r =>
+            {
+                var catId = r.CategoryId ?? r.Question?.CategoryId ?? 0;
+                var cat = categories.FirstOrDefault(c => c.Id == catId);
+                var maxPoint = r.MaxPoint ?? r.Question?.MaxPoint ?? 0;
+                var earned = r.PointEarned ?? 0;
+                var isCorrect = maxPoint > 0 && earned >= maxPoint;
+                return new AttemptQuestionDetail
+                {
+                    QuestionId = r.QuestionId,
+                    QuestionName = r.Question?.Name ?? "",
+                    CategoryId = catId,
+                    CategoryName = cat?.Name ?? r.Question?.Category?.Name ?? "Unknown",
+                    CategoryColor = cat?.Color ?? r.Question?.Category?.Color ?? "",
+                    EarnedPoints = earned,
+                    MaxPoint = maxPoint,
+                    IsCorrect = isCorrect
+                };
+            }).ToList();
+
+            var rawTotals = orderedResults
+                .GroupBy(r =>
+                {
+                    var catId = r.CategoryId ?? r.Question?.CategoryId ?? 0;
+                    return catId;
+                })
+                .Select(g => new
+                {
+                    CategoryId = g.Key,
+                    EarnedPoints = g.Sum(x => x.PointEarned ?? 0),
+                    MaxPoint = g.Sum(x => x.MaxPoint ?? x.Question?.MaxPoint ?? 0)
+                })
+                .ToList();
+
+            var userTestDetails = await _context.UserTestDetails
+                .Where(d => d.ResultId == testId)
+                .ToListAsync();
+
+            foreach (var category in categories)
+            {
+                if (!rawTotals.Any(rt => rt.CategoryId == category.Id))
+                {
+                    var detailsForCategory = userTestDetails.Where(d => d.CategoryId == category.Id).ToList();
+                    if (detailsForCategory.Any())
+                    {
+                        rawTotals.Add(new
+                        {
+                            CategoryId = category.Id,
+                            EarnedPoints = detailsForCategory.Sum(d => d.PointEarned),
+                            MaxPoint = detailsForCategory.Sum(d => d.TotalPoint)
+                        });
+                    }
+                }
+            }
+
+            var totalsByCat = rawTotals.ToDictionary(x => x.CategoryId, x => x);
+
+            var categoryTotals = categories.Select(c =>
+            {
+                totalsByCat.TryGetValue(c.Id, out var row);
+                var earned = row?.EarnedPoints ?? 0;
+                var max = row?.MaxPoint ?? 0;
+                var percent = max > 0 ? (int)Math.Round((double)earned / max * 100) : 0;
+                return new AttemptCategoryTotal
+                {
+                    CategoryId = c.Id,
+                    CategoryName = c.Name ?? "",
+                    CategoryColor = c.Color ?? "",
+                    EarnedPoints = earned,
+                    MaxPoint = max,
+                    Percent = percent
+                };
+            }).ToList();
+
+            return new AttemptDetailsPayload
+            {
+                Attempt = new AttemptInfo { GeneralComment = attempt.GeneralComment ?? "" },
+                Questions = questionDetails,
+                Categories = categories.Select(c => c.Name ?? string.Empty).ToArray(),
+                CategoryTotals = categoryTotals
+            };
+        }
     }
 
     public class PrintExamPayload
@@ -506,5 +617,40 @@ namespace AppTest.Services
         public int[] AvgDataZero { get; set; } = Array.Empty<int>();
         public int[] AvgDataOther { get; set; } = Array.Empty<int>();
         public int TestId { get; set; }
+    }
+
+    public class AttemptDetailsPayload
+    {
+        public AttemptInfo Attempt { get; set; } = new();
+        public List<AttemptQuestionDetail> Questions { get; set; } = new();
+        public string[] Categories { get; set; } = Array.Empty<string>();
+        public List<AttemptCategoryTotal> CategoryTotals { get; set; } = new();
+    }
+
+    public class AttemptInfo
+    {
+        public string GeneralComment { get; set; } = string.Empty;
+    }
+
+    public class AttemptQuestionDetail
+    {
+        public int QuestionId { get; set; }
+        public string QuestionName { get; set; } = string.Empty;
+        public int CategoryId { get; set; }
+        public string CategoryName { get; set; } = string.Empty;
+        public string CategoryColor { get; set; } = string.Empty;
+        public int EarnedPoints { get; set; }
+        public int MaxPoint { get; set; }
+        public bool IsCorrect { get; set; }
+    }
+
+    public class AttemptCategoryTotal
+    {
+        public int CategoryId { get; set; }
+        public string CategoryName { get; set; } = string.Empty;
+        public string CategoryColor { get; set; } = string.Empty;
+        public int EarnedPoints { get; set; }
+        public int MaxPoint { get; set; }
+        public int Percent { get; set; }
     }
 }

@@ -1,0 +1,268 @@
+@{
+    ViewData["Title"] = "Chi tiết kết quả học viên";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    .scroll-box {
+        width: 100%;
+        max-width: 1200px;
+        background: white;
+        border: 1px solid #ccc;
+        padding: 20px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        box-shadow: 2px 4px 8px 4px #51a34755;
+        box-sizing: border-box;
+        border-radius: 15px;
+        clip-path: inset(0 round 15px);
+    }
+
+    .table-wrapper {
+        max-height: calc(100vh - 360px);
+        overflow-y: auto;
+        scrollbar-width: thin;
+        overscroll-behavior-x: initial;
+        scroll-behavior: smooth;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    table thead tr:first-child th:first-child {
+        border-top-left-radius: 10px;
+    }
+
+    table thead tr:first-child th:last-child {
+        border-top-right-radius: 10px;
+    }
+
+    table tbody tr:last-child td:first-child {
+        border-bottom-left-radius: 10px;
+    }
+
+    table tbody tr:last-child td:last-child {
+        border-bottom-right-radius: 10px;
+    }
+
+    /* Css cho bảng Chi tiết đúng/sai */
+    #attemptQuestionsBody {
+        display: table-row-group;
+    }
+
+    #attemptQuestionsBody tr td {
+        text-align: center;
+        vertical-align: middle;
+    }
+
+    #attemptQuestionsBody tr td:nth-child(2),
+    #attemptQuestionsBody tr td:nth-child(3) {
+        text-align: left;
+    }
+
+    .table-responsive table thead th {
+        text-align: center !important;
+        vertical-align: middle;
+    }
+
+    .table-responsive table {
+        border-radius: 10px;
+        overflow: hidden !important;
+    }
+
+    .table-responsive table thead {
+        overflow: hidden;
+    }
+
+    .table-responsive table thead tr:first-child th:first-child {
+        border-top-left-radius: 10px;
+    }
+
+    .table-responsive table thead tr:first-child th:last-child {
+        border-top-right-radius: 10px;
+    }
+
+    .table-responsive table tbody tr:last-child td:first-child {
+        border-bottom-left-radius: 10px;
+    }
+
+    .table-responsive table tbody tr:last-child td:last-child {
+        border-bottom-right-radius: 10px;
+    }
+
+    /* Bo tròn góc trên bảng và canh giữa tất cả th */
+    .table-responsive {
+        border-radius: 10px;
+        overflow: hidden !important;
+    }
+
+    #attemptQuestionsBody tr td {
+        text-align: center !important;
+        vertical-align: middle !important;
+    }
+
+    #attemptQuestionsBody tr td:nth-child(2),
+    #attemptQuestionsBody tr td:nth-child(3) {
+        text-align: left !important;
+    }
+@* --------- *@
+    /* MODIFIED: Ép màu xanh đậm và chữ trắng cho toàn bộ header table trong trang */
+    thead th, 
+    .table thead th, 
+    .table-light th { 
+        position: sticky;
+        top: 0;
+        background-color: #198754 !important; /* Xanh chuẩn của hệ thống */
+        color: #ffffff !important;            /* Chữ trắng tinh */
+        text-align: center !important;
+        border-color: #146c43 !important;
+        z-index: 2;
+        font-weight: 700;
+        padding: 12px 8px !important;
+        font-size: 1rem !important;
+    }
+
+    .table-responsive table thead {
+        display: table-header-group;
+        border-radius: 10px 10px 0 0;
+        overflow: hidden;
+    }
+
+    .table-responsive .table-light th:first-child {
+        border-top-left-radius: 10px !important;
+    }
+
+    .table-responsive .table-light th:last-child {
+        border-top-right-radius: 10px !important;
+    }
+
+    /* MODIFIED: Đồng bộ font size cho tất cả các cell trong bảng */
+    #showlist tr td,
+    #showlist tr th,
+    #attemptQuestionsBody tr td,
+    #attemptCategoryTotals table tbody tr td,
+    #attemptCategoryTotals table thead tr th {
+        font-size: 1rem !important;
+        padding: 6px 5px !important;
+    }
+
+    #attemptQuestionsBody td:last-child,
+    .text-success {
+        color: #000000 !important; 
+        opacity: 1 !important;
+        font-weight: 600 !important;
+        text-transform: none !important;
+        font-family: inherit !important;
+        -webkit-text-fill-color: #000000 !important;
+    }
+
+    .badge.bg-success {
+        background-color: #198754 !important;
+        color: #fff !important;
+    }
+
+    #radarChart {
+        width: 100%;
+        height: auto;
+        min-height: 350px;
+        max-height: 500px;
+        margin: 0 auto;
+        background: #ffffff00;
+        border-radius: 10px;
+        padding: 20px;
+    }
+
+    #columnChart {
+        width: 100%;
+        height: auto;
+        min-height: 350px;
+        max-height: 500px;
+        margin: 0 auto;
+        background: #ffffff00;
+        border-radius: 10px;
+        padding: 20px;
+    }
+</style>
+
+<div class="p-3">
+    <div class="scroll-box">
+        <input type="hidden" id="studentId" value="@TempData["studentId"]" />
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+            <div class="fw-bolder fs-5">
+                📊 Kết quả chi tiết - Học viên: <span id="studentNameLabel" class="text-success">...</span>
+            </div>
+            <div>
+                <a href="/admin/student-overview" class="btn btn-sm btn-outline-primary me-2"><i class="ti ti-arrow-left"></i> Quay về</a>
+            </div>
+        </div>
+
+        <div class="row" style="width:100%;">
+            <div class="col col-12 col-sm-12 col-md-12">
+                <div class="table-wrapper">
+                    <table class="table table-bordered table-hover table-responsive bg-white mb-0">
+                        <tbody id="showlist"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="col col-12 col-sm-12 col-md-6 mt-3">
+                <div class="card-header fw-bolder" style="background:#51A347;color:#fff;border-radius:10px 10px 0 0;">
+                    Biểu đồ kết quả kiểm tra năng lực của học viên
+                </div>
+                <div class="card-body" style="background:#ffffff90;border:1px solid rgba(0,0,0,.06);border-top:0;border-radius:0 0 10px 10px;">
+                    <div id="radarChart"></div>
+                </div>
+            </div>
+
+            <div class="col col-12 col-sm-12 col-md-6 mt-3">
+                <div class="card-header fw-bolder" style="background:#51A347;color:#fff;border-radius:10px 10px 0 0;">
+                    Biểu đồ so sánh kết quả kiểm tra năng lực
+                </div>
+                <div class="card-body" style="background:#ffffff90;border:1px solid rgba(0,0,0,.06);border-top:0;border-radius:0 0 10px 10px;">
+                    <div id="columnChart" style="visibility: hidden;"></div>
+                </div>
+            </div>
+
+            <div class="col col-12 col-sm-12 col-md-12 mt-3">
+                <div class="card-header fw-bolder" style="background:#51A347;color:#fff;border-radius:10px 10px 0 0;">
+                    Chi tiết đúng/sai theo lần làm bài
+                </div>
+                <div class="card-body" style="background:#ffffff90;border:1px solid rgba(0,0,0,.06);border-top:0;border-radius:0 0 10px 10px;">
+                    <div class="d-flex align-items-center gap-2 flex-wrap mb-2">
+                        <label class="fw-bolder mb-0">Chọn lần:</label>
+                        <select id="attemptSelect" class="form-select form-select-sm w-auto"></select>
+                    </div>
+
+                    <div id="attemptGeneralComment" class="mb-3"></div>
+
+                    <div class="table-responsive">
+                        <table class="table table-sm table-striped table-bordered align-middle bg-white">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width:48px;" class="text-center">#</th>
+                                    <th style="width:150px;">Danh mục</th>
+                                    <th>Câu hỏi</th>
+                                    <th style="width:130px;" class="text-center">Điểm</th>
+                                    <th style="width:120px;" class="text-center">Kết quả</th>
+                                </tr>
+                            </thead>
+                            <tbody id="attemptQuestionsBody"></tbody>
+                        </table>
+                    </div>
+
+                    <div id="attemptCategoryTotals" class="mt-3"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
+@section Scripts {
+    <script src="~/js/adminResultDetailJs.js"></script>
+}
