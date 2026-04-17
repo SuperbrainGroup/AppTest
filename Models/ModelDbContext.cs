@@ -261,6 +261,7 @@ namespace AppTest.Models
         public string dienthoai { get; set; }
         public DateTime namsinh { get; set; }
         public string CourseName { get; set; }
+        public int? Lop { get; set; }
         public bool HasTestResult { get; set; }
         public int NumberTest { get; set; }
         public DateTime? DateTest { get; set; }

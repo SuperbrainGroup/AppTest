@@ -214,6 +214,44 @@ $(document).ready(function () {
             console.error("Không tìm thấy ID học viên");
         }
     });
+
+    $("#btnExport").on("click", function () {
+        const btn = $(this);
+        const originalHtml = btn.html();
+        btn.prop("disabled", true).html('<i class="ti ti-loader-2" style="animation: spin 1s linear infinite;"></i> Đang tải...');
+
+        $.ajax({
+            url: "/admin/api/student-overview/export",
+            type: "POST",
+            data: {
+                search: $("#searchInput").val(),
+                fromDate: $("#fromDate").val(),
+                toDate: $("#toDate").val()
+            },
+            xhrFields: {
+                responseType: "blob"
+            },
+            success: function (data) {
+                // Tạo blob URL và download
+                const blob = new Blob([data], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `DanhSachHocVien_${new Date().toISOString().split('T')[0]}.xlsx`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                
+                btn.prop("disabled", false).html(originalHtml);
+                showNotification("Tải danh sách thành công!");
+            },
+            error: function () {
+                btn.prop("disabled", false).html(originalHtml);
+                showNotification("Lỗi khi tải danh sách!");
+            }
+        });
+    });
 });
 
 function debounce(func, delay) {
