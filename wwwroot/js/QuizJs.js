@@ -278,24 +278,23 @@
                 const ua = userAnswers[q.id];
                 const maxQ = maxPointForQuestion(q);
                 let statusHtml = "";
-                let detail = "";
                 if (!ua) {
                     statusHtml = '<span class="badge text-bg-secondary">Chưa trả lời</span>';
-                    detail = "—";
                 } else {
                     const ok = maxQ > 0 && ua.point >= maxQ;
                     statusHtml = ok
                         ? '<span class="badge text-bg-success">Đúng</span>'
                         : '<span class="badge text-bg-danger">Sai</span>';
-                    detail = escapeHtml(ua.label || "(Có hình / không có chữ)");
                 }
+                const categoryColor = q.categoryColor || "#198754";
+                const categoryDisplay = `<span style="display: inline-block; width: 12px; height: 12px; background-color: ${categoryColor}; border-radius: 2px; margin-right: 6px;"></span>${escapeHtml(q.categoryName || "")}`;
                 rows +=
                     "<tr><td class=\"text-center\">" +
                     (i + 1) +
-                    '</td><td class="small text-start">' +
+                    '</td><td class="text-start">' +
+                    categoryDisplay +
+                    '</td><td class="text-start">' +
                     escapeHtml(q.name || "") +
-                    '</td><td class="small">' +
-                    detail +
                     "</td><td>" +
                     statusHtml +
                     "</td></tr>";

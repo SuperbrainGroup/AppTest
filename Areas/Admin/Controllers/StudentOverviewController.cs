@@ -114,5 +114,43 @@ namespace AppTest.Areas.Admin.Controllers
                 return StatusCode(500, new { status = 500, message = ex.Message });
             }
         }
+
+        [HttpGet]
+        [Route("/admin/student-overview/result-detail")]
+        public async Task<IActionResult> ResultDetailView(int? studentId)
+        {
+            if (!studentId.HasValue)
+            {
+                return RedirectToAction("Index", "Home");
+            }
+
+            int userId = _checkUser.GetUserId();
+            var user = await _studentOverviewService.GetStaffProfileAsync(userId);
+            TempData["name"] = user?.ten ?? "Admin";
+            TempData["studentId"] = studentId;
+            return View("ResultDetail");
+        }
+
+        [HttpGet]
+        [Route("/admin/api/student-overview/attempt-details")]
+        public async Task<IActionResult> AttemptDetails(int testId)
+        {
+            try
+            {
+                var payload = await _studentOverviewService.GetAttemptDetailsPayloadAsync(testId);
+                return Json(new
+                {
+                    success = true,
+                    attempt = payload.Attempt,
+                    questions = payload.Questions,
+                    categories = payload.Categories,
+                    categoryTotals = payload.CategoryTotals
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
     }
 }

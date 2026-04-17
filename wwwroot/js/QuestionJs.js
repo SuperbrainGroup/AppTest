@@ -251,8 +251,9 @@ $(document).ready(function () {
     });
 
     $(document).on("click", "#btn-add", function () {
+        // Reset form để clear tất cả các field bao gồm file input
+        document.getElementById("createQuestionForm").reset();
         $("#createId").val(0);
-        $(".form-control").val("");
         $("#displayOrder").val(0); 
         $("#createLop").val("1");
         $createModal.modal("show");
@@ -319,8 +320,8 @@ $(document).ready(function () {
             success: function (response) {
                 if (response.success) {
                     LoadlistQuestion();
-                    $(".form-control").val();
-                    $(".form-select").val();
+                    // Reset form để clear tất cả các field bao gồm file input
+                    form[0].reset();
                     $("#createModal").modal("hide");
                     showNotification(response.message);
                 } else {
@@ -396,7 +397,8 @@ $(document).ready(function () {
         const id = $(this).data("id");
         $("#questionId").val(id);
         $("#answerId").val(0);
-        $(".form-control").val("");
+        // Reset tất cả các trường trong form
+        document.getElementById("createAnswerForm").reset();
         $("#exampleModal").modal("show");
     });
 
@@ -432,8 +434,8 @@ $(document).ready(function () {
             success: function (response) {
                 if (response.success) {
                     LoadlistQuestion();
-                    $(".form-control").val();
-                    $(".form-select").val();
+                    // Reset form để clear tất cả các field bao gồm file input
+                    form[0].reset();
                     $("#exampleModal").modal("hide");
                     showNotification(response.message);
                 } else {

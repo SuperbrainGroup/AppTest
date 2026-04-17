@@ -5,7 +5,7 @@ $(document).ready(function () {
         const studentId = $("#studentId").val();
         if (!studentId) return;
         $.ajax({
-            url: "/Teacher/LoadResultTestById",
+            url: "/admin/api/student-overview/result-detail",
             type: "GET",
             data: { studentId: studentId },
             success: function (res) {
@@ -25,14 +25,14 @@ $(document).ready(function () {
     function loadStudents() {
         $("#showlist").html("<tr><td colspan=6 class='text-center'>Đang tải dữ liệu, vui lòng đợi trong giây lát ...</td></tr>");
         $.ajax({
-            url: "/GetRadarChartData",
+            url: "/admin/api/student-overview/radar-chart",
             type: "GET",
             data: {
                 studentId: $("#studentId").val()
             },
             success: function (response) {
                 if (response) {
-                    console.log("dữ liệu được tải: " + response.data);
+                    console.log("dữ liệu được tải: " + response.chartData);
                     const categories = response.categories ?? [];
                     const chartData = response.chartData ?? [];
                     chartDataCache = chartData;
@@ -76,20 +76,29 @@ $(document).ready(function () {
                 }
             }
         });
-    } loadStudents();
+    }
+
+    loadStudents();
     loadStudentName();
+
     function loadComparison() {
         $.ajax({
-            url: "/GetComparisonChartData",
+            url: "/admin/api/student-overview/comparison-chart",
             type: "GET",
             data: {
                 studentId: $("#studentId").val()
             },
             success: function (response) {
                 if (response) {
-                    console.log("dữ liệu được tải: " + response.data);
+                    console.log("dữ liệu được tải: " + response.currentUserData);
                     const categories = response.categories ?? [];
-                    const comparisonData = response.comparisonData ?? [];
+                    const comparisonData = [
+                        {
+                            userData: response.currentUserData,
+                            avgDataZero: response.avgDataZero,
+                            avgDataOther: response.avgDataOther
+                        }
+                    ];
                     // Vẽ biểu đồ so sánh
                     drawComparisonChart(categories, comparisonData);
                 } else {
@@ -107,7 +116,10 @@ $(document).ready(function () {
                 }
             }
         });
-    } loadComparison();
+    }
+
+    loadComparison();
+
     function displayResultTable(categories, chartData) {
         const resultTableBody = $("#showlist");
         resultTableBody.empty(); // Xóa dữ liệu cũ nếu có
@@ -174,7 +186,7 @@ $(document).ready(function () {
         $("#attemptGeneralComment").html("");
 
         $.ajax({
-            url: "/GetAttemptDetails",
+            url: "/admin/api/student-overview/attempt-details",
             type: "GET",
             data: { testId: testId },
             success: function (res) {
@@ -283,15 +295,15 @@ $(document).ready(function () {
                 indicator: categories.map(name => ({
                     name: name,
                     max: 100,
-                    textStyle: { // Thêm textStyle ở đây
-                    fontFamily: 'Arial', // Chọn font chữ bạn muốn
-                    fontSize: 12,
-                    color: '#fff' // Đặt màu chữ nếu cần
+                    textStyle: {
+                        fontFamily: 'Arial',
+                        fontSize: 12,
+                        color: '#fff'
                     }
                 })),
 
                 axisName: {
-                    color: '#5a6659', // màu chữ của nhãn trục (ví dụ: So sánh, Ma trận, ...)
+                    color: '#5a6659',
                     fontFamily: '"Nunito Sans", sans-serif',
                     fontSize: 12
                 }
@@ -305,6 +317,7 @@ $(document).ready(function () {
 
         myChart.setOption(option);
     }
+
     function drawComparisonChart(categories, comparisonData) {
         const columnChartDom = document.getElementById('columnChart');
         const myChart = echarts.init(columnChartDom);

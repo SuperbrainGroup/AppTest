@@ -67,14 +67,20 @@ $(document).ready(function () {
                     const birthYear = formatBirthYear(student.namsinh);
                     let testCount = `<td class="text-center text-danger">-</td>`;
                     let testDate = `<td class="text-center text-danger">-</td>`;
-                    let btn = "";
 
-                    let btnDetail = `<button class="btn btn-sm btn-icon btn-outline-primary fs-10 btn_chitiet" data-id="${student.id}" style="margin-left:6px;"><i class="ti ti-list-details"></i> Chi tiết</button>`;
+                    // Disable nút Chi tiết nếu chưa có bài test
+                    let btnDetailClass = student.hasTestResult ? "btn-outline-primary" : "btn-outline-secondary disabled";
+                    let btnDetailDisabled = student.hasTestResult ? "" : "disabled";
+                    let btnDetail = `<button class="btn btn-sm btn-icon ${btnDetailClass} fs-10 btn_chitiet" data-id="${student.id}" style="margin-left:6px;" ${btnDetailDisabled}><i class="ti ti-list-details"></i> Chi tiết</button>`;
+
+                    // Luôn hiển thị nút Kết quả, nhưng disable nếu chưa có bài test
+                    let btnKetquaClass = student.hasTestResult ? "btn-success" : "btn-outline-secondary disabled";
+                    let btnKetquaDisabled = student.hasTestResult ? "" : "disabled";
+                    let btn = `<button class="btn btn-sm btn-icon ${btnKetquaClass} fs-10 btn_ketqua" data-id="${student.id}" ${btnKetquaDisabled}><i class="ti ti-eye"></i> Kết quả</button>`;
 
                     if (student.hasTestResult) {
                         testCount = `<td class="text-center"><span class="text-success">${student.numberTest}</span></td>`;
                         testDate = `<td class="text-center">${formatDateVi(student.dateTest)}</td>`;
-                        btn = `<button class="btn btn-sm btn-icon btn-success fs-10 btn_ketqua" data-id="${student.id}"><i class="ti ti-eye"></i> Kết quả</button>`;
                     }
 
                     tableBody.append(`
@@ -124,7 +130,13 @@ $(document).ready(function () {
         loadStudents();
     });
 
-    $(document).on("click", ".btn_ketqua", function () {
+    $(document).on("click", ".btn_ketqua", function (e) {
+        // Check nếu nút bị disabled thì không cho click
+        if ($(this).prop("disabled")) {
+            e.preventDefault();
+            return false;
+        }
+        
         const id = $(this).data("id");
         window.AppStudentPrint.printResult(id, studentDirectory[id]);
     });
@@ -134,10 +146,21 @@ $(document).ready(function () {
     });
 
     $(document).on("click", ".btn_chitiet", function (e) {
-        // MODIFIED HERE: Xử lý chuyển hướng giống bên Giáo viên
+        // Check nếu nút bị disabled thì không cho click
+        if ($(this).prop("disabled")) {
+            e.preventDefault();
+            return false;
+        }
+        
+        // Xử lý chuyển hướng cho admin riêng biệt
         const studentId = $(this).attr("data-id"); 
         if (studentId) {
-            window.location.href = "/gv/xem-ket-qua?studentId=" + encodeURIComponent(studentId);
+            // Kiểm tra xem là admin hay giáo viên
+            if (window.location.pathname.includes("/admin/")) {
+                window.location.href = "/admin/student-overview/result-detail?studentId=" + encodeURIComponent(studentId);
+            } else {
+                window.location.href = "/gv/xem-ket-qua?studentId=" + encodeURIComponent(studentId);
+            }
         } else {
             console.error("Không tìm thấy ID học viên");
         }

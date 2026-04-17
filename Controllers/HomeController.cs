@@ -302,13 +302,15 @@ namespace AppTest.Controllers
                 return BadRequest(new { success = false, message = "SessionId không hợp lệ." });
             }
 
-            // Clear kết quả cũ để tránh trùng khóa (SessionId, QuestionId).
-            var existing = await _context.questionResults
+            var existingOnlineResults = await _context.questionResults
                 .Where(qr => qr.SessionId == sessionId)
+                .Include(qr => qr.Question)
+                .Where(qr => qr.Question.OnPaper == false)
                 .ToListAsync();
-            if (existing.Any())
+            
+            if (existingOnlineResults.Any())
             {
-                _context.questionResults.RemoveRange(existing);
+                _context.questionResults.RemoveRange(existingOnlineResults);
             }
 
             foreach (var item in results)
