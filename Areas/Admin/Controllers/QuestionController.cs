@@ -356,6 +356,24 @@ namespace AppTest.Areas.Admin.Controllers
                 {
                     return Json(new { success = false, message = "Không tìm thấy đáp án!" });
                 }
+
+                // Xóa file ảnh vật lý nếu đáp án có ảnh
+                if (!string.IsNullOrEmpty(answer.Image))
+                {
+                    try
+                    {
+                        var imagePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", answer.Image.TrimStart('/'));
+                        if (System.IO.File.Exists(imagePath))
+                        {
+                            System.IO.File.Delete(imagePath);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Lỗi xóa file ảnh của đáp án: {ex.Message}");
+                    }
+                }
+
                 _context.Answers.Remove(answer);
                 _context.SaveChanges();
                 return Json(new { success = true, message = "Đã xóa đáp án thành công!" });
