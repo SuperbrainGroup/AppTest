@@ -142,6 +142,13 @@
 
         #questionImage {
             max-height: 35vh !important;
+            transition: opacity 0.5s ease !important;
+            opacity: 1;
+        }
+
+        #questionImage.gif-hidden {
+            opacity: 0 !important;
+            pointer-events: none;
         }
         .result-bg-box {
             width: 90vw !important;       
@@ -501,6 +508,9 @@
                     </span>
                     <button type="button" class="btn btn-sm btn-outline-success fs-6 timer-div d-none" id="btnPlayAudio" aria-label="Nghe lại câu hỏi">
                         <i class="ti ti-player-play"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-success fs-6 timer-div" id="btn-show-gif" aria-label="Xem lại ảnh" title="Xem lại ảnh GIF" style="display: none;">
+                        Xem lại ảnh
                     </button>
                 </div>
                 <div class="quiz-header-actions">
