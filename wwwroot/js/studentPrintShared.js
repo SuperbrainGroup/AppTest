@@ -299,7 +299,7 @@
         return `
             <div class="print-report print-wireframe exam-paper exam-print-a4 exam-print-layout">
                 <div class="exam-print-top">
-                    <div class="exam-print-title">PHIẾU KIỂM TRA NĂNG LỰC</div>
+                    <div class="exam-print-title">BÀI KIỂM TRA NĂNG LỰC</div>
                     <div class="exam-student-row-3">
                         <div><span class="exam-info-lbl">Họ và tên</span><strong>${escapeHtml(safeValue(s.ten))}</strong></div>
                         <div><span class="exam-info-lbl">Ngày sinh</span><strong>${escapeHtml(formatDateVi(s.ngaysinh))}</strong></div>
