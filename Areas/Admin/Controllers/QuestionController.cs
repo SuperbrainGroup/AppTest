@@ -60,6 +60,41 @@ namespace AppTest.Areas.Admin.Controllers
                 {
                     return Json(new { success = false, message = "Không tìm thấy câu hỏi!" });
                 }
+
+                // Xóa file ảnh vật lý nếu câu hỏi có ảnh
+                if (!string.IsNullOrEmpty(question.Image))
+                {
+                    try
+                    {
+                        var imagePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", question.Image.TrimStart('/'));
+                        if (System.IO.File.Exists(imagePath))
+                        {
+                            System.IO.File.Delete(imagePath);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Lỗi xóa file ảnh của câu hỏi: {ex.Message}");
+                    }
+                }
+
+                // Xóa file audio vật lý nếu câu hỏi có audio
+                if (!string.IsNullOrEmpty(question.Audio))
+                {
+                    try
+                    {
+                        var audioPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", question.Audio.TrimStart('/'));
+                        if (System.IO.File.Exists(audioPath))
+                        {
+                            System.IO.File.Delete(audioPath);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Lỗi xóa file audio của câu hỏi: {ex.Message}");
+                    }
+                }
+
                 _context.Questions.Remove(question);
                 _context.SaveChanges();
                 return Json(new { success = true, message = "Đã xóa câu hỏi thành công!" });

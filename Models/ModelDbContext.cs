@@ -28,6 +28,12 @@ namespace AppTest.Models
             modelBuilder.Entity<QuestionResult>()
                 .HasKey(hj => new { hj.SessionId, hj.QuestionId });
 
+            modelBuilder.Entity<QuestionResult>()
+                .HasOne(qr => qr.Question)
+                .WithMany(q => q.QuestionResults)
+                .HasForeignKey(qr => qr.QuestionId)
+                .OnDelete(DeleteBehavior.Cascade);  // Xóa QuestionResult khi Question bị xóa
+
             modelBuilder.Entity<CategoryResultSetting>()
                 .HasOne(q => q.QuestionCategory)
                 .WithMany(c => c.CategoryResultSettings)
