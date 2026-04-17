@@ -129,7 +129,7 @@ namespace AppTest.Areas.Admin.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> SaveChange(int id, int categoryId, string name, int lop, int maxPoint, IFormFile image, IFormFile audio, bool onPaper, int displayOrder) 
+        public async Task<IActionResult> SaveChange(int id, int categoryId, string name, int lop, int maxPoint, IFormFile image, IFormFile audio, bool onPaper, int displayOrder, string clearImage = "false") 
         {
             try
             {
@@ -158,6 +158,27 @@ namespace AppTest.Areas.Admin.Controllers
                     }
 
                     imageUrl = "/uploads/answers/" + uniqueFileName;
+
+                    if (id != 0)
+                    {
+                        var oldQuestion = await _context.Questions.FindAsync(id);
+                        if (oldQuestion != null && !string.IsNullOrEmpty(oldQuestion.Image))
+                        {
+                            try
+                            {
+                                var oldImagePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", oldQuestion.Image.TrimStart('/'));
+                                if (System.IO.File.Exists(oldImagePath))
+                                {
+                                    System.IO.File.Delete(oldImagePath);
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+
+                                Console.WriteLine($"Lỗi xóa file ảnh cũ: {ex.Message}");
+                            }
+                        }
+                    }
                 }
 
                 if (audio != null && audio.Length > 0)
@@ -217,6 +238,26 @@ namespace AppTest.Areas.Admin.Controllers
                     if (imageUrl != null)
                     {
                         question.Image = imageUrl;
+                    }
+                    else if (clearImage == "true")
+                    {
+                        // Xóa file ảnh vật lý nếu tồn tại
+                        if (!string.IsNullOrEmpty(question.Image))
+                        {
+                            try
+                            {
+                                var imagePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", question.Image.TrimStart('/'));
+                                if (System.IO.File.Exists(imagePath))
+                                {
+                                    System.IO.File.Delete(imagePath);
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"Lỗi xóa file ảnh: {ex.Message}");
+                            }
+                        }
+                        question.Image = null;
                     }
                     if (audioUrl != null)
                     {

@@ -256,9 +256,17 @@ $(document).ready(function () {
         $("#createId").val(0);
         $("#displayOrder").val(0); 
         $("#createLop").val("1");
-        $createModal.modal("show");
         $("#audioPreviewPlayer").attr("src", "");
         $("#audioPreviewContainer").hide();
+        $("#imageDisplayInput").val("");
+        $("#imageDisplayInput").attr("placeholder", "No file chosen");
+        $("#clearImageBtn").hide();
+        $("#clearImage").val("false");
+        $createModal.modal("show");
+    });
+
+    $(document).on("click", "#imageDisplayInput", function () {
+        $("#createImage").click();
     });
 
     // Preview audio ngay khi người dùng chọn file mới (chưa cần bấm lưu)
@@ -289,6 +297,17 @@ $(document).ready(function () {
                     var lv = data.question.lop != null ? data.question.lop : data.question.Lop;
                     $("#createLop").val(lv != null ? String(lv) : "1");
                     $("#maxPoint").val(data.question.maxPoint);
+                    if (data.question.image) {
+                        const imageName = data.question.image.split('/').pop();
+                        $("#imageDisplayInput").val(imageName);
+                        $("#clearImageBtn").show();
+                    } else {
+                        $("#imageDisplayInput").val("");
+                        $("#imageDisplayInput").attr("placeholder", "No file chosen");
+                        $("#clearImageBtn").hide();
+                    }
+                    $("#clearImage").val("false");
+                    
                     if (data.question.audio) {
                         $("#audioPreviewPlayer").attr("src", data.question.audio);
                         $("#audioPreviewContainer").show();
@@ -311,6 +330,17 @@ $(document).ready(function () {
         if (categoryName === "Tự tin") {
             formData.set("onPaper", "true");
         }
+
+        const fileInput = document.getElementById("createImage");
+        if (!fileInput.files || fileInput.files.length === 0) {
+            formData.delete("image");
+        }
+
+        const audioInput = document.getElementById("createAudio");
+        if (!audioInput.files || audioInput.files.length === 0) {
+            formData.delete("audio");
+        }
+        
         $.ajax({
             url: '/Admin/Question/SaveChange',
             type: "POST",
@@ -391,6 +421,23 @@ $(document).ready(function () {
         if (!audio) return;
         audio.currentTime = 0;
         audio.play();
+    });
+
+    $(document).on("click", "#clearImageBtn", function () {
+        $("#createImage").val("");
+        $("#imageDisplayInput").val("");
+        $("#imageDisplayInput").attr("placeholder", "No file chosen");
+        $("#clearImage").val("true");
+        $("#clearImageBtn").hide();
+    });
+
+    $(document).on("change", "#createImage", function () {
+        if (this.files && this.files.length > 0) {
+            const fileName = this.files[0].name;
+            $("#imageDisplayInput").val(fileName);
+            $("#clearImage").val("false");
+            $("#clearImageBtn").show();
+        }
     });
 
     $(document).on("click", ".btn-addAnswer", function () {
