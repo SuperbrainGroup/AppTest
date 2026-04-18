@@ -112,6 +112,7 @@ namespace AppTest.Controllers
                      q.Lop == lop
                  )
                  .OrderBy(q => q.Category!.DisplayOrder ?? 0)
+                 .ThenBy(q => q.DisplayOrder)
                  .ThenBy(q => q.Id)
                  .Select(q => new
                  {
