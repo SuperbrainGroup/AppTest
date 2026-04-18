@@ -202,6 +202,7 @@ namespace AppTest.Services
             var questions = await _context.Questions
                 .Where(q => q.Enable && q.OnPaper == true && q.Lop == lop)
                 .OrderBy(q => q.CategoryId)
+                .ThenBy(q => q.DisplayOrder)
                 .Include(q => q.Category)
                 .Select(q => new PrintExamQuestion
                 {
