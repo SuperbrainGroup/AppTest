@@ -200,7 +200,7 @@ namespace AppTest.Services
             int lop = user.lop;
 
             var questions = await _context.Questions
-                .Where(q => q.OnPaper == true && q.Lop == lop)
+                .Where(q => q.Enable && q.OnPaper == true && q.Lop == lop)
                 .OrderBy(q => q.CategoryId)
                 .Include(q => q.Category)
                 .Select(q => new PrintExamQuestion
@@ -209,7 +209,7 @@ namespace AppTest.Services
                     Name = q.Name,
                     CategoryId = q.CategoryId,
                     MaxPoint = q.MaxPoint,
-                    MaxPointCategory = _context.Questions.Where(x => x.CategoryId == q.CategoryId && x.Lop == lop).Sum(x => x.MaxPoint),
+                    MaxPointCategory = _context.Questions.Where(x => x.Enable && x.CategoryId == q.CategoryId && x.Lop == lop).Sum(x => x.MaxPoint),
                     AgeGroup = q.Lop,
                     CategoryName = q.Category != null ? q.Category.Name : "Unknown",
                     HasImage = q.Image != null,
@@ -712,7 +712,7 @@ namespace AppTest.Services
 
                 // Get all online questions only, ordered by ID
                 var allQuestions = await _context.Questions
-                    .Where(x => x.OnPaper == false) // Online questions only
+                    .Where(x => x.Enable && x.OnPaper == false) // Online questions only
                     .OrderBy(x => x.Id)
                     .ToListAsync();
 

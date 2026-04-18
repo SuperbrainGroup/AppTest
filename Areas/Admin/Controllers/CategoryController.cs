@@ -32,7 +32,7 @@ namespace AppTest.Areas.Admin.Controllers
                 Id = c.Id,
                 Name = c.Name,
                 Description = c.Description,
-                Count = _context.Questions.Count(x=>x.CategoryId == c.Id),
+                Count = _context.Questions.Count(x=>x.Enable && x.CategoryId == c.Id),
                 Status = (c.Enable==true?"<span class='text-success'>Kích hoạt</span>": "Không kích hoạt"),
                 Enable = c.Enable,
                 c.DisplayOrder,

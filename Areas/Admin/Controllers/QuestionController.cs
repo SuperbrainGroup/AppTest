@@ -61,6 +61,8 @@ namespace AppTest.Areas.Admin.Controllers
                     return Json(new { success = false, message = "Không tìm thấy câu hỏi!" });
                 }
 
+                question.Enable = false;
+                
                 // Xóa file ảnh vật lý nếu câu hỏi có ảnh
                 if (!string.IsNullOrEmpty(question.Image))
                 {
@@ -95,13 +97,13 @@ namespace AppTest.Areas.Admin.Controllers
                     }
                 }
 
-                _context.Questions.Remove(question);
+                // _context.Questions.Remove(question);
                 _context.SaveChanges();
                 return Json(new { success = true, message = "Đã xóa câu hỏi thành công!" });
             }
             catch (Exception ex)
             {
-                // Ghi log lỗi ngoại lệ// Ghi log lỗi ngoại lệ
+                // Ghi log lỗi ngoại lệ
                 return Json(new { success = false, message = "An error occurred.", details = ex.Message });
             }
         }
@@ -110,7 +112,7 @@ namespace AppTest.Areas.Admin.Controllers
         [Route("LoadListQuestion")]
         public async Task<IActionResult> GetQuestions(int categoryId,string searchString)
         {
-            var question = _context.Questions.AsQueryable();
+            var question = _context.Questions.Where(q => q.Enable).AsQueryable();
 
             if (categoryId != 0)
             {

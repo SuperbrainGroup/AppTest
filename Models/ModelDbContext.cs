@@ -115,6 +115,9 @@ namespace AppTest.Models
         public DateTime? DateCreate { get; set; }
         public string? Image { get; set; }
         public string? Audio { get; set; }
+        
+        /// <summary>Trạng thái câu hỏi: true = hiển thị, false = ẩn (xóa mềm).</summary>
+        public bool Enable { get; set; } = true;
 
         [ForeignKey("CategoryId")]
         public QuestionCategory Category { get; set; }
