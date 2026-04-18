@@ -98,8 +98,9 @@
     }
 
     .student-toolbar .search-wrap {
-        flex: 1 1 280px;
-        max-width: 420px;
+        flex: 0 1 auto;
+        min-width: 200px;
+        max-width: 300px;
     }
 
     .student-toolbar .count-wrap {
@@ -463,12 +464,100 @@
             background: #fff;
         }
     }
+
+    .date-filters-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: nowrap;
+    }
+
+    .date-input-wrapper {
+        position: relative;
+        display: inline-block;
+    }
+
+    .date-input-custom {
+        min-width: 140px;
+        color: #495057;
+        cursor: pointer;
+    }
+
+    .date-input-custom::-webkit-calendar-picker-indicator {
+        cursor: pointer;
+        opacity: 1;
+    }
+
+    .date-input-custom::placeholder {
+        opacity: 0;
+    }
+
+    .date-input-custom:not(.has-value) {
+        color: transparent !important;
+    }
+
+    .date-input-custom:not(.has-value)::-webkit-datetime-edit {
+        visibility: hidden !important;
+    }
+
+    .date-input-custom:not(.has-value)::-webkit-datetime-edit-fields-wrapper {
+        visibility: hidden !important;
+    }
+
+    .date-input-custom.has-value {
+        color: #495057 !important;
+    }
+
+    .date-input-custom.has-value::-webkit-datetime-edit {
+        visibility: visible !important;
+    }
+
+    .date-input-wrapper::before {
+        content: attr(data-placeholder);
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #aaa;
+        font-style: italic;
+        pointer-events: none;
+        font-size: 1rem;
+    }
+
+    .date-input-wrapper.has-value::before {
+        display: none;
+    }
 </style>
 <div class="">
     <div class="student-toolbar">
         <div class="search-wrap">
             <input type="text" id="searchInput" class="form-control" placeholder="Tìm kiếm học viên...">
         </div>
+        
+        <div class="date-filters-group">
+            <div class="d-flex align-items-center gap-1">
+                <label for="fromDate" class="mb-0 fw-bold small text-nowrap">Từ ngày:</label>
+                <div class="date-input-wrapper" data-placeholder="Chọn ngày">
+                    <input type="date" id="fromDate" class="form-control form-control-sm date-input-custom">
+                </div>
+            </div>
+
+            <div class="d-flex align-items-center gap-1">
+                <label for="toDate" class="mb-0 fw-bold small text-nowrap">Đến ngày:</label>
+                <div class="date-input-wrapper" data-placeholder="Chọn ngày">
+                    <input type="date" id="toDate" class="form-control form-control-sm date-input-custom">
+                </div>
+            </div>
+
+            <button type="button" id="btnReset" class="btn btn-sm btn-outline-danger" title="Xóa lọc">
+                <i class="ti ti-refresh"></i> Làm mới
+            </button>
+
+            <button type="button" id="btnExport" class="btn btn-sm btn-outline-success" title="Tải danh sách học viên">
+                <i class="ti ti-download"></i> Tải dữ liệu
+            </button>
+        </div>
+        
         <div class="count-wrap">
             <i class="ti ti-filter"></i>
             <span id="counts"></span> học viên

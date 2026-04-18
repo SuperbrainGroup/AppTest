@@ -106,6 +106,7 @@ namespace AppTest.Controllers
             var questions = await _context.Questions
                  .Include(q => q.Category)
                  .Where(q =>
+                     q.Enable &&
                      q.Category.Enable == true &&
                      q.OnPaper == false &&
                      q.Lop == lop
@@ -122,7 +123,7 @@ namespace AppTest.Controllers
                      CategoryName = q.Category != null ? q.Category.Name : "Unknown",
                     categoryColor = q.Category != null ? q.Category.Color : "#198754",
                      maxPointCategory = _context.Questions
-                         .Where(x => x.CategoryId == q.CategoryId && x.Lop == lop)
+                         .Where(x => x.Enable && x.CategoryId == q.CategoryId && x.Lop == lop)
                          .Sum(x => x.MaxPoint),
                      hasImage = q.Image != null,
                      q.Image,

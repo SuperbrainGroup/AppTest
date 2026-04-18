@@ -139,11 +139,62 @@
             }
 
             // Câu hỏi: ảnh minh họa (nếu có)
-            $("#questionImage").attr("src", question.image);
+            const $questionImage = $("#questionImage");
+            const $showGifBtn = $("#btn-show-gif");
+            $questionImage.attr("src", question.image);
+            // Reset style khi hiển thị ảnh mới
+            $questionImage.css("opacity", "1");
+            
             if (question.hasImage) {
-                $("#questionImage").removeClass("d-none");
+                $questionImage.removeClass("d-none");
+                
+                // Kiểm tra nếu là ảnh GIF thì ẩn sau số giây được chỉ định
+                if (question.image) {
+
+                    const urlWithoutQuery = question.image.split('?')[0].toLowerCase();
+                    const isGif = urlWithoutQuery.endsWith('.gif');
+                    
+                    if (isGif) {
+                        console.log('GIF detected:', question.image);
+                        
+                        // Lấy thời gian từ câu hỏi (ví dụ: "Câu hỏi? (5)" → 5 giây)
+                        const gifDurationMatch = question.name.match(/\((\d+)\)/);
+                        let gifDuration = 3000; // Mặc định 3 giây
+                        
+                        if (gifDurationMatch && gifDurationMatch[1]) {
+                            gifDuration = parseInt(gifDurationMatch[1]) * 1000; 
+                            console.log('GIF duration from question:', gifDuration, 'ms');
+                        }
+                        
+                        $showGifBtn.show();
+                        
+                        // Hàm ẩn GIF sau số giây được chỉ định
+                        function scheduleGifHide() {
+                            if (window.gifHideTimeout) {
+                                clearTimeout(window.gifHideTimeout);
+                            }
+                            window.gifHideTimeout = setTimeout(function() {
+                                console.log('Hiding GIF after', gifDuration, 'ms');
+                                $questionImage.css("opacity", "0");
+                            }, gifDuration);
+                        }
+                        
+                        // Gọi hàm lần đầu
+                        scheduleGifHide();
+                        
+                        // Xóa event cũ nếu có, rồi thêm event mới
+                        $showGifBtn.off("click").on("click", function() {
+                            console.log('Show GIF button clicked');
+                            $questionImage.css("opacity", "1");
+                            scheduleGifHide();
+                        });
+                    } else {
+                        $showGifBtn.hide();
+                    }
+                }
             } else {
-                $("#questionImage").addClass("d-none");
+                $questionImage.addClass("d-none");
+                $showGifBtn.hide();
             }
 
             // Câu hỏi: text

@@ -28,6 +28,12 @@ namespace AppTest.Models
             modelBuilder.Entity<QuestionResult>()
                 .HasKey(hj => new { hj.SessionId, hj.QuestionId });
 
+            modelBuilder.Entity<QuestionResult>()
+                .HasOne(qr => qr.Question)
+                .WithMany(q => q.QuestionResults)
+                .HasForeignKey(qr => qr.QuestionId)
+                .OnDelete(DeleteBehavior.Cascade);  // Xóa QuestionResult khi Question bị xóa
+
             modelBuilder.Entity<CategoryResultSetting>()
                 .HasOne(q => q.QuestionCategory)
                 .WithMany(c => c.CategoryResultSettings)
@@ -109,6 +115,9 @@ namespace AppTest.Models
         public DateTime? DateCreate { get; set; }
         public string? Image { get; set; }
         public string? Audio { get; set; }
+        
+        /// <summary>Trạng thái câu hỏi: true = hiển thị, false = ẩn (xóa mềm).</summary>
+        public bool Enable { get; set; } = true;
 
         [ForeignKey("CategoryId")]
         public QuestionCategory Category { get; set; }
@@ -255,6 +264,7 @@ namespace AppTest.Models
         public string dienthoai { get; set; }
         public DateTime namsinh { get; set; }
         public string CourseName { get; set; }
+        public int? Lop { get; set; }
         public bool HasTestResult { get; set; }
         public int NumberTest { get; set; }
         public DateTime? DateTest { get; set; }

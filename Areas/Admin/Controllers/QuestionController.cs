@@ -60,13 +60,50 @@ namespace AppTest.Areas.Admin.Controllers
                 {
                     return Json(new { success = false, message = "Không tìm thấy câu hỏi!" });
                 }
-                _context.Questions.Remove(question);
+
+                question.Enable = false;
+                
+                // Xóa file ảnh vật lý nếu câu hỏi có ảnh
+                if (!string.IsNullOrEmpty(question.Image))
+                {
+                    try
+                    {
+                        var imagePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", question.Image.TrimStart('/'));
+                        if (System.IO.File.Exists(imagePath))
+                        {
+                            System.IO.File.Delete(imagePath);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Lỗi xóa file ảnh của câu hỏi: {ex.Message}");
+                    }
+                }
+
+                // Xóa file audio vật lý nếu câu hỏi có audio
+                if (!string.IsNullOrEmpty(question.Audio))
+                {
+                    try
+                    {
+                        var audioPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", question.Audio.TrimStart('/'));
+                        if (System.IO.File.Exists(audioPath))
+                        {
+                            System.IO.File.Delete(audioPath);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Lỗi xóa file audio của câu hỏi: {ex.Message}");
+                    }
+                }
+
+                // _context.Questions.Remove(question);
                 _context.SaveChanges();
                 return Json(new { success = true, message = "Đã xóa câu hỏi thành công!" });
             }
             catch (Exception ex)
             {
-                // Ghi log lỗi ngoại lệ// Ghi log lỗi ngoại lệ
+                // Ghi log lỗi ngoại lệ
                 return Json(new { success = false, message = "An error occurred.", details = ex.Message });
             }
         }
@@ -75,7 +112,7 @@ namespace AppTest.Areas.Admin.Controllers
         [Route("LoadListQuestion")]
         public async Task<IActionResult> GetQuestions(int categoryId,string searchString)
         {
-            var question = _context.Questions.AsQueryable();
+            var question = _context.Questions.Where(q => q.Enable).AsQueryable();
 
             if (categoryId != 0)
             {
@@ -129,7 +166,7 @@ namespace AppTest.Areas.Admin.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> SaveChange(int id, int categoryId, string name, int lop, int maxPoint, IFormFile image, IFormFile audio, bool onPaper, int displayOrder) 
+        public async Task<IActionResult> SaveChange(int id, int categoryId, string name, int lop, int maxPoint, IFormFile image, IFormFile audio, bool onPaper, int displayOrder, string clearImage = "false") 
         {
             try
             {
@@ -158,6 +195,27 @@ namespace AppTest.Areas.Admin.Controllers
                     }
 
                     imageUrl = "/uploads/answers/" + uniqueFileName;
+
+                    if (id != 0)
+                    {
+                        var oldQuestion = await _context.Questions.FindAsync(id);
+                        if (oldQuestion != null && !string.IsNullOrEmpty(oldQuestion.Image))
+                        {
+                            try
+                            {
+                                var oldImagePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", oldQuestion.Image.TrimStart('/'));
+                                if (System.IO.File.Exists(oldImagePath))
+                                {
+                                    System.IO.File.Delete(oldImagePath);
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+
+                                Console.WriteLine($"Lỗi xóa file ảnh cũ: {ex.Message}");
+                            }
+                        }
+                    }
                 }
 
                 if (audio != null && audio.Length > 0)
@@ -217,6 +275,26 @@ namespace AppTest.Areas.Admin.Controllers
                     if (imageUrl != null)
                     {
                         question.Image = imageUrl;
+                    }
+                    else if (clearImage == "true")
+                    {
+                        // Xóa file ảnh vật lý nếu tồn tại
+                        if (!string.IsNullOrEmpty(question.Image))
+                        {
+                            try
+                            {
+                                var imagePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", question.Image.TrimStart('/'));
+                                if (System.IO.File.Exists(imagePath))
+                                {
+                                    System.IO.File.Delete(imagePath);
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"Lỗi xóa file ảnh: {ex.Message}");
+                            }
+                        }
+                        question.Image = null;
                     }
                     if (audioUrl != null)
                     {
@@ -315,6 +393,24 @@ namespace AppTest.Areas.Admin.Controllers
                 {
                     return Json(new { success = false, message = "Không tìm thấy đáp án!" });
                 }
+
+                // Xóa file ảnh vật lý nếu đáp án có ảnh
+                if (!string.IsNullOrEmpty(answer.Image))
+                {
+                    try
+                    {
+                        var imagePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", answer.Image.TrimStart('/'));
+                        if (System.IO.File.Exists(imagePath))
+                        {
+                            System.IO.File.Delete(imagePath);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Lỗi xóa file ảnh của đáp án: {ex.Message}");
+                    }
+                }
+
                 _context.Answers.Remove(answer);
                 _context.SaveChanges();
                 return Json(new { success = true, message = "Đã xóa đáp án thành công!" });

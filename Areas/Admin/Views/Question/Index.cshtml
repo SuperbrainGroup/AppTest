@@ -87,6 +87,34 @@
             width: 100%;
         }
     }
+
+    .custom-file-group {
+        border: 1px solid #dee2e6; 
+        border-radius: 0.375rem !important; 
+        overflow: hidden; 
+        display: flex;
+    }
+
+    .custom-file-group .form-control, 
+    .custom-file-group .btn {
+        border: none !important;
+        border-radius: 0 !important; 
+        box-shadow: none !important; 
+    }
+
+    .custom-file-group #imageDisplayInput {
+        flex: 1;
+    }
+
+    .custom-file-group #clearImageBtn {
+        border-left: 1px solid #dee2e6 !important; 
+    }
+
+    .custom-file-group:focus-within {
+        border-color: #86b7fe;
+        outline: 0;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
 </style>
 <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-2 mt-3">
     
@@ -144,6 +172,7 @@
             </div>
             <form id ="createQuestionForm">
                 <div class="modal-body">
+                    <input type="hidden" id="clearImage" name="clearImage" value="false">
                     <div class="mb-3">
                         <label for="createCategoryId" class="form-label">Danh mục câu hỏi</label>
                         <select class="form-select fw-semibold" id="createCategoryId" name="categoryId"></select>
@@ -167,7 +196,13 @@
                                 (Tối ưu: Định dạng JPG/PNG, Ngang 2000px, Cao 1410px, Tối đa 500KB)
                             </span>
                         </label>
-                        <input type="file" class="form-control" id="createImage" name="image">
+                        <div class="input-group custom-file-group">
+                            <input type="file" class="form-control" id="createImage" name="image" style="display:none;">
+                            <input type="text" class="form-control" id="imageDisplayInput" placeholder="No file chosen" readonly style="cursor:pointer; background-color:#fff;">
+                            <button class="btn btn-outline-danger" type="button" id="clearImageBtn" style="display:none;">
+                                <i class="ti ti-x"></i>
+                            </button>
+                        </div>
                     </div>
                     <div class="mb-3">
                         <label for="createAudio" class="form-label">Audio câu hỏi (tùy chọn)</label>

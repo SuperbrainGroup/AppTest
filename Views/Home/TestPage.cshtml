@@ -142,6 +142,13 @@
 
         #questionImage {
             max-height: 35vh !important;
+            transition: opacity 0.5s ease !important;
+            opacity: 1;
+        }
+
+        #questionImage.gif-hidden {
+            opacity: 0 !important;
+            pointer-events: none;
         }
         .result-bg-box {
             width: 90vw !important;       
@@ -322,9 +329,10 @@
     #question-text {
         display: block;
         margin-top: 8px;
-        font-size: 1.15rem;
+        font-size: 1.5rem;
+        font-weight: 600 !important;
         line-height: 1.35;
-        color: #6b7280;
+        color: #000000 !important;
         word-break: break-word;
     }
 
@@ -500,6 +508,9 @@
                     </span>
                     <button type="button" class="btn btn-sm btn-outline-success fs-6 timer-div d-none" id="btnPlayAudio" aria-label="Nghe lại câu hỏi">
                         <i class="ti ti-player-play"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-success fs-6 timer-div" id="btn-show-gif" aria-label="Xem lại ảnh" title="Xem lại ảnh GIF" style="display: none;">
+                        Xem lại ảnh
                     </button>
                 </div>
                 <div class="quiz-header-actions">

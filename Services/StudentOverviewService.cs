@@ -2,6 +2,7 @@ using AppTest.Models;
 using AppTest.Helper;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
+using OfficeOpenXml;
 
 namespace AppTest.Services
 {
@@ -9,12 +10,14 @@ namespace AppTest.Services
     {
         Task<User?> GetStudentProfileAsync(int userId);
         Task<User?> GetStaffProfileAsync(int userId);
-        Task<List<StudentWithTestStatus>> GetAllTestedStudentsAsync(int idChiNhanh, string? search, int offset, int limit);
+        Task<List<StudentWithTestStatus>> GetAllTestedStudentsAsync(int idChiNhanh, string? search, int offset, int limit, string? fromDate = null, string? toDate = null);
         Task<PrintExamPayload> GetPrintExamPayloadAsync(int studentId);
         Task<ResultDetailPayload> GetResultDetailPayloadAsync(int studentId);
         Task<RadarChartPayload> GetRadarChartPayloadAsync(int studentId);
         Task<ComparisonChartPayload> GetComparisonChartPayloadAsync(int studentId);
         Task<AttemptDetailsPayload> GetAttemptDetailsPayloadAsync(int testId);
+        Task<byte[]> ExportStudentListToExcelAsync(List<StudentWithTestStatus> students);
+        Task<List<StudentWithTestDetailsForExport>> GetStudentTestDetailsForExportAsync(List<int> studentIds);
     }
 
     public class StudentOverviewService : IStudentOverviewService
@@ -104,7 +107,7 @@ namespace AppTest.Services
         }
 
         // MODIFIED: Cập nhật chữ ký hàm thêm idChiNhanh và đổi logic sang Student-centric
-        public async Task<List<StudentWithTestStatus>> GetAllTestedStudentsAsync(int idChiNhanh, string? search, int offset, int limit)
+        public async Task<List<StudentWithTestStatus>> GetAllTestedStudentsAsync(int idChiNhanh, string? search, int offset, int limit, string? fromDate = null, string? toDate = null)
         {
             // 1. Lấy danh sách học viên từ API theo chi nhánh
             string apiUrl = $"http://45.119.82.38:6969/api/Students/GetStudentByChiNhanh/{idChiNhanh}?limit={limit}&offset={offset}&search={search ?? ""}";
@@ -122,27 +125,70 @@ namespace AppTest.Services
 
             var enriched = new List<StudentWithTestStatus>();
 
+            // Parse date filters
+            var culture = new System.Globalization.CultureInfo("vi-VN");
+            DateTime? fDate = string.IsNullOrEmpty(fromDate) ? null : DateTime.Parse(fromDate, culture);
+            DateTime? tDate = string.IsNullOrEmpty(toDate) ? null : DateTime.Parse(toDate, culture).AddDays(1).AddSeconds(-1);
+
             // 2. Duyệt danh sách từ API và kiểm tra bài test tại DB local
             foreach (var s in studentsApi)
             {
                 var testQuery = _context.UserTests
-                    .Where(x => x.UserId == s.id && x.IsComplete == true)
-                    .OrderByDescending(x => x.DateCreate);
+                    .Where(x => x.UserId == s.id && x.IsComplete == true);
+
+                // Apply date filters if provided
+                if (fDate.HasValue)
+                {
+                    testQuery = testQuery.Where(x => x.DateCreate >= fDate.Value);
+                }
+                if (tDate.HasValue)
+                {
+                    testQuery = testQuery.Where(x => x.DateCreate <= tDate.Value);
+                }
+
+                testQuery = testQuery.OrderByDescending(x => x.DateCreate);
 
                 var hasTest = await testQuery.AnyAsync();
+                var latestTest = await testQuery.FirstOrDefaultAsync();
+                int? lop = latestTest?.Lop ?? latestTest?.AgeGroup;
+                string? courseName = latestTest?.CourseName;
                 
-                enriched.Add(new StudentWithTestStatus
+                // Only add student if they have a test result matching the date filter
+                if (hasTest)
                 {
-                    Id = s.id,
-                    mahs = s.mahs,
-                    ten = s.ten ?? string.Empty,
-                    Email = s.email ?? string.Empty,
-                    dienthoai = s.phhS_dienthoai ?? string.Empty,
-                    namsinh = s.namsinh,
-                    HasTestResult = hasTest,
-                    NumberTest = hasTest ? await testQuery.CountAsync() : 0,
-                    DateTest = hasTest ? (await testQuery.FirstOrDefaultAsync())?.DateCreate : null
-                });
+                    enriched.Add(new StudentWithTestStatus
+                    {
+                        Id = s.id,
+                        mahs = s.mahs,
+                        ten = s.ten ?? string.Empty,
+                        Email = s.email ?? string.Empty,
+                        dienthoai = s.phhS_dienthoai ?? string.Empty,
+                        namsinh = s.namsinh,
+                        CourseName = courseName ?? "Chưa học",
+                        Lop = lop,
+                        HasTestResult = true,
+                        NumberTest = await testQuery.CountAsync(),
+                        DateTest = latestTest?.DateCreate
+                    });
+                }
+                // If no date filter is applied, include all students
+                else if (!fDate.HasValue && !tDate.HasValue)
+                {
+                    enriched.Add(new StudentWithTestStatus
+                    {
+                        Id = s.id,
+                        mahs = s.mahs,
+                        ten = s.ten ?? string.Empty,
+                        Email = s.email ?? string.Empty,
+                        dienthoai = s.phhS_dienthoai ?? string.Empty,
+                        namsinh = s.namsinh,
+                        CourseName = courseName ?? "Chưa học",
+                        Lop = lop,
+                        HasTestResult = false,
+                        NumberTest = 0,
+                        DateTest = null
+                    });
+                }
             }
 
             return enriched;
@@ -154,7 +200,7 @@ namespace AppTest.Services
             int lop = user.lop;
 
             var questions = await _context.Questions
-                .Where(q => q.OnPaper == true && q.Lop == lop)
+                .Where(q => q.Enable && q.OnPaper == true && q.Lop == lop)
                 .OrderBy(q => q.CategoryId)
                 .Include(q => q.Category)
                 .Select(q => new PrintExamQuestion
@@ -163,7 +209,7 @@ namespace AppTest.Services
                     Name = q.Name,
                     CategoryId = q.CategoryId,
                     MaxPoint = q.MaxPoint,
-                    MaxPointCategory = _context.Questions.Where(x => x.CategoryId == q.CategoryId && x.Lop == lop).Sum(x => x.MaxPoint),
+                    MaxPointCategory = _context.Questions.Where(x => x.Enable && x.CategoryId == q.CategoryId && x.Lop == lop).Sum(x => x.MaxPoint),
                     AgeGroup = q.Lop,
                     CategoryName = q.Category != null ? q.Category.Name : "Unknown",
                     HasImage = q.Image != null,
@@ -565,6 +611,299 @@ namespace AppTest.Services
                 CategoryTotals = categoryTotals
             };
         }
+
+        public async Task<List<StudentWithTestDetailsForExport>> GetStudentTestDetailsForExportAsync(List<int> studentIds)
+        {
+            var result = new List<StudentWithTestDetailsForExport>();
+            
+            var categories = await _context.QuestionCategories
+                .Where(x => x.Enable == true)
+                .OrderBy(x => x.DisplayOrder)
+                .ToListAsync();
+
+            foreach (var studentId in studentIds)
+            {
+                var latestTest = await _context.UserTests
+                    .Where(x => x.UserId == studentId && x.IsComplete == true)
+                    .OrderByDescending(x => x.DateCreate)
+                    .FirstOrDefaultAsync();
+
+                if (latestTest == null) continue;
+
+                var categoryScores = new Dictionary<int, int>();
+
+                // Lấy điểm từ paper results
+                var paperResults = await _context.questionResults
+                    .Where(qr => qr.SessionId == latestTest.Id)
+                    .GroupBy(qr => qr.CategoryId)
+                    .Select(g => new { CategoryId = g.Key, Earned = g.Sum(x => x.PointEarned ?? 0), Max = g.Sum(x => x.MaxPoint ?? 0) })
+                    .ToListAsync();
+
+                foreach (var pr in paperResults)
+                {
+                    if (pr.Max > 0)
+                    {
+                        int percent = (int)Math.Round((double)pr.Earned / pr.Max * 100);
+                        categoryScores[pr.CategoryId ?? 0] = Math.Min(100, Math.Max(0, percent));
+                    }
+                }
+
+                // Lấy điểm từ online results cho các category chưa có
+                var onlineDetails = await _context.UserTestDetails
+                    .Where(d => d.ResultId == latestTest.Id)
+                    .GroupBy(d => d.CategoryId)
+                    .Select(g => new { CategoryId = g.Key, Earned = g.Sum(x => x.PointEarned), Max = g.Sum(x => x.TotalPoint) })
+                    .ToListAsync();
+
+                foreach (var od in onlineDetails)
+                {
+                    if (!categoryScores.ContainsKey(od.CategoryId))
+                    {
+                        if (od.Max > 0)
+                        {
+                            int percent = (int)Math.Round((double)od.Earned / od.Max * 100);
+                            categoryScores[od.CategoryId] = Math.Min(100, Math.Max(0, percent));
+                        }
+                    }
+                }
+
+                // Tính tổng điểm
+                var totalEarned = 0;
+                var totalMax = 0;
+                foreach (var cat in categories)
+                {
+                    if (categoryScores.TryGetValue(cat.Id, out var score))
+                    {
+                        totalEarned += score;
+                        totalMax += 100;
+                    }
+                }
+
+                int totalPercent = totalMax > 0 ? totalEarned / categories.Count : 0;
+                int timeToComplete = latestTest.TimeToCompleted ?? 0;
+
+                result.Add(new StudentWithTestDetailsForExport
+                {
+                    StudentId = studentId,
+                    TestId = latestTest.Id,
+                    TimeToComplete = timeToComplete,
+                    TotalScore = totalPercent,
+                    CategoryScores = categoryScores
+                });
+            }
+
+            return result;
+        }
+
+        public async Task<byte[]> ExportStudentListToExcelAsync(List<StudentWithTestStatus> students)
+        {
+            // Set EPPlus license context
+            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+
+            using (var package = new ExcelPackage())
+            {
+                var worksheet = package.Workbook.Worksheets.Add("Danh sách học viên");
+
+                // Get all categories and questions
+                var categories = await _context.QuestionCategories
+                    .Where(x => x.Enable == true)
+                    .OrderBy(x => x.DisplayOrder)
+                    .ToListAsync();
+
+                // Get all online questions only, ordered by ID
+                var allQuestions = await _context.Questions
+                    .Where(x => x.Enable && x.OnPaper == false) // Online questions only
+                    .OrderBy(x => x.Id)
+                    .ToListAsync();
+
+                // Group questions by category
+                var questionsByCategory = allQuestions.GroupBy(q => q.CategoryId).ToDictionary(g => g.Key, g => g.ToList());
+
+                // Calculate total questions (max in any category)
+                int totalQuestions = allQuestions.Count;
+
+                // Setup headers
+                int headerRow = 1;
+                int currentCol = 1;
+
+                // Column 1: STT (Số thứ tự)
+                SetHeaderCell(worksheet, headerRow, currentCol++, "STT");
+
+                // Column 2-9: Basic info
+                var basicHeaders = new[] { "Mã học viên", "Tên", "Cơ sở", "Ngày làm test", "Khoá học", "Ngày sinh", "Lớp", "Time làm bài" };
+                for (int i = 0; i < basicHeaders.Length; i++)
+                {
+                    SetHeaderCell(worksheet, headerRow, currentCol++, basicHeaders[i]);
+                }
+
+                // Column 10-12: Skill evaluation
+                SetHeaderCell(worksheet, headerRow, currentCol++, "Kỳ năng");
+                SetHeaderCell(worksheet, headerRow, currentCol++, "Tổng điểm");
+                SetHeaderCell(worksheet, headerRow, currentCol++, "% Kết quả luyện tập");
+
+                // Column 13+: Questions (Câu 1, Câu 2, ...)
+                int questionStartCol = currentCol;
+                for (int i = 1; i <= totalQuestions; i++)
+                {
+                    SetHeaderCell(worksheet, headerRow, currentCol++, $"Câu {i}");
+                }
+
+                // Set column widths
+                worksheet.Column(1).Width = 8;   // STT
+                worksheet.Column(2).Width = 15;  // Mã học viên
+                worksheet.Column(3).Width = 20;  // Tên
+                worksheet.Column(4).Width = 15;  // Cơ sở
+                worksheet.Column(5).Width = 15;  // Ngày làm test
+                worksheet.Column(6).Width = 15;  // Khoá học
+                worksheet.Column(7).Width = 12;  // Ngày sinh
+                worksheet.Column(8).Width = 10;  // Lớp
+                worksheet.Column(9).Width = 15;  // Time làm bài
+                worksheet.Column(10).Width = 15; // Kỳ năng
+                worksheet.Column(11).Width = 12; // Tổng điểm
+                worksheet.Column(12).Width = 18; // % Kết quả
+                for (int i = questionStartCol; i < questionStartCol + totalQuestions; i++)
+                {
+                    worksheet.Column(i).Width = 10;
+                }
+
+                // Data rows
+                int dataRow = 2;
+                int sttCounter = 1;
+
+                for (int studentIdx = 0; studentIdx < students.Count; studentIdx++)
+                {
+                    var student = students[studentIdx];
+
+                    // Get student's latest test
+                    var latestTest = await _context.UserTests
+                        .Where(x => x.UserId == student.Id && x.IsComplete == true)
+                        .OrderByDescending(x => x.DateCreate)
+                        .FirstOrDefaultAsync();
+
+                    if (latestTest == null) continue;
+
+                    // Get question results for this test (online questions)
+                    var questionResults = await _context.questionResults
+                        .Where(qr => qr.SessionId == latestTest.Id)
+                        .ToListAsync();
+
+                    var resultsByQuestionId = questionResults.ToDictionary(qr => qr.QuestionId, qr => qr);
+
+                    bool isFirstCategoryOfStudent = true;
+
+                    // For each category, create a row
+                    foreach (var category in categories)
+                    {
+                        // Only add row if this category has questions
+                        if (!questionsByCategory.ContainsKey(category.Id) || questionsByCategory[category.Id].Count == 0)
+                            continue;
+
+                        currentCol = 1;
+
+                        // Column 1: STT (only for first category of this student)
+                        if (isFirstCategoryOfStudent)
+                        {
+                            worksheet.Cells[dataRow, currentCol++].Value = sttCounter++;
+                        }
+                        else
+                        {
+                            currentCol++;
+                        }
+
+                        // Column 2-9: Basic info (only for first category of this student)
+                        if (isFirstCategoryOfStudent)
+                        {
+                            worksheet.Cells[dataRow, currentCol++].Value = student.mahs; // Mã học viên
+                            worksheet.Cells[dataRow, currentCol++].Value = student.ten; // Tên
+                            worksheet.Cells[dataRow, currentCol++].Value = "HQ"; // Cơ sở
+                            worksheet.Cells[dataRow, currentCol++].Value = latestTest.DateCreate?.ToString("dd/MM/yyyy"); // Ngày làm test
+                            worksheet.Cells[dataRow, currentCol++].Value = student.CourseName ?? "Chưa học"; // Khoá học
+                            worksheet.Cells[dataRow, currentCol++].Value = student.namsinh.Year; // Ngày sinh (year)
+                            worksheet.Cells[dataRow, currentCol++].Value = student.Lop?.ToString() ?? "-"; // Lớp
+                            
+                            // Time làm bài: convert seconds to hh:mm:ss format
+                            int totalSeconds = latestTest.TimeToCompleted ?? 0;
+                            int hours = totalSeconds / 3600;
+                            int minutes = (totalSeconds % 3600) / 60;
+                            int seconds = totalSeconds % 60;
+                            worksheet.Cells[dataRow, currentCol++].Value = $"{hours:D2}:{minutes:D2}:{seconds:D2}";
+                            
+                            isFirstCategoryOfStudent = false;
+                        }
+                        else
+                        {
+                            currentCol += 8; // Skip basic info columns
+                        }
+
+                        // Column 10: Skill name
+                        worksheet.Cells[dataRow, currentCol++].Value = category.Name;
+
+                        // Get questions in this category
+                        var categoryQuestions = questionsByCategory[category.Id];
+
+                        // Calculate total score for this category
+                        int totalEarned = 0;
+                        int totalMax = 0;
+                        foreach (var q in categoryQuestions)
+                        {
+                            if (resultsByQuestionId.TryGetValue(q.Id, out var result))
+                            {
+                                totalEarned += result.PointEarned ?? 0;
+                                totalMax += result.MaxPoint ?? 0;
+                            }
+                        }
+
+                        int categoryPercent = totalMax > 0 ? (int)Math.Round((double)totalEarned / totalMax * 100) : 0;
+
+                        // Column 11: Total score for category
+                        worksheet.Cells[dataRow, currentCol++].Value = totalEarned;
+
+                        // Column 12: Percentage
+                        worksheet.Cells[dataRow, currentCol++].Value = categoryPercent;
+
+                        // Column 13+: Question scores
+                        // Show ALL questions, but only those in this category have scores
+                        for (int q = 0; q < totalQuestions; q++)
+                        {
+                            if (q < allQuestions.Count)
+                            {
+                                var question = allQuestions[q];
+                                // Only show score if question is in this category
+                                if (question.CategoryId == category.Id && resultsByQuestionId.TryGetValue(question.Id, out var result))
+                                {
+                                    worksheet.Cells[dataRow, currentCol].Value = result.PointEarned ?? 0;
+                                }
+                                else
+                                {
+                                    worksheet.Cells[dataRow, currentCol].Value = "";
+                                }
+                            }
+                            currentCol++;
+                        }
+
+                        dataRow++;
+                    }
+                }
+
+                // Auto-fit columns
+                worksheet.Cells.AutoFitColumns();
+
+                // Return as byte array
+                return package.GetAsByteArray();
+            }
+        }
+
+        private void SetHeaderCell(ExcelWorksheet worksheet, int row, int col, string value)
+        {
+            var cell = worksheet.Cells[row, col];
+            cell.Value = value;
+            cell.Style.Font.Bold = true;
+            cell.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+            cell.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(25, 135, 84)); // Bootstrap success color
+            cell.Style.Font.Color.SetColor(System.Drawing.Color.White);
+            cell.Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
+            cell.Style.VerticalAlignment = OfficeOpenXml.Style.ExcelVerticalAlignment.Center;
+        }
     }
 
     public class PrintExamPayload
@@ -652,5 +991,14 @@ namespace AppTest.Services
         public int EarnedPoints { get; set; }
         public int MaxPoint { get; set; }
         public int Percent { get; set; }
+    }
+
+    public class StudentWithTestDetailsForExport
+    {
+        public int StudentId { get; set; }
+        public int TestId { get; set; }
+        public int TimeToComplete { get; set; }
+        public int TotalScore { get; set; }
+        public Dictionary<int, int> CategoryScores { get; set; } = new();
     }
 }

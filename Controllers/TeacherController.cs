@@ -162,7 +162,7 @@ namespace AppTest.Controllers
             _context.SaveChanges();
 
             var questions = await _context.Questions
-                .Where(q => q.OnPaper == true && q.Lop == lop)
+                .Where(q => q.Enable && q.OnPaper == true && q.Lop == lop)
                 .OrderBy(q => q.CategoryId)
                 .Include(q => q.Category)
                 .Select(q => new
@@ -171,7 +171,7 @@ namespace AppTest.Controllers
                     q.Name,
                     q.CategoryId,
                     q.MaxPoint,
-                    maxPointCategory = _context.Questions.Where(x => x.CategoryId == q.CategoryId && x.Lop == lop).Sum(x => x.MaxPoint),
+                    maxPointCategory = _context.Questions.Where(x => x.Enable && x.CategoryId == q.CategoryId && x.Lop == lop).Sum(x => x.MaxPoint),
                     lop = q.Lop,
                     CategoryName = q.Category != null ? q.Category.Name : "Unknown",
                     hasImage = q.Image != null,
@@ -201,7 +201,7 @@ namespace AppTest.Controllers
             int lop = user.lop;
 
             var questions = await _context.Questions
-                .Where(q => q.OnPaper == true && q.Lop == lop)
+                .Where(q => q.Enable && q.OnPaper == true && q.Lop == lop)
                 .OrderBy(q => q.CategoryId)
                 .Include(q => q.Category)
                 .Select(q => new
@@ -210,7 +210,7 @@ namespace AppTest.Controllers
                     q.Name,
                     q.CategoryId,
                     q.MaxPoint,
-                    maxPointCategory = _context.Questions.Where(x => x.CategoryId == q.CategoryId && x.Lop == lop).Sum(x => x.MaxPoint),
+                    maxPointCategory = _context.Questions.Where(x => x.Enable && x.CategoryId == q.CategoryId && x.Lop == lop).Sum(x => x.MaxPoint),
                     lop = q.Lop,
                     CategoryName = q.Category != null ? q.Category.Name : "Unknown",
                     hasImage = q.Image != null,

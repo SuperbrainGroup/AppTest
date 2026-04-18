@@ -9,6 +9,29 @@ $(document).ready(function () {
     let lastRadarCategories = [];
     let lastRadarChartData = [];
 
+    // Handle date input placeholder visibility
+    function updateDateInputPlaceholder(inputElement) {
+        const wrapper = inputElement.closest('.date-input-wrapper');
+        if (wrapper) {
+            if (inputElement.value) {
+                wrapper.classList.add('has-value');
+                inputElement.classList.add('has-value');
+            } else {
+                wrapper.classList.remove('has-value');
+                inputElement.classList.remove('has-value');
+            }
+        }
+    }
+
+    // Initialize date inputs
+    $('#fromDate, #toDate').on('change', function() {
+        updateDateInputPlaceholder(this);
+    }).on('click', function() {
+        this.showPicker();
+    }).each(function() {
+        updateDateInputPlaceholder(this);
+    });
+
     function escapeHtml(value) {
         return String(value ?? "")
             .replace(/&/g, "&amp;")
@@ -49,7 +72,9 @@ $(document).ready(function () {
             data: {
                 limit: limit,
                 offset: (currentPage - 1) * limit,
-                search: $("#searchInput").val()
+                search: $("#searchInput").val(),
+                fromDate: $("#fromDate").val(),
+                toDate: $("#toDate").val()
             },
             success: function (response) {
                 if (!response.success) {
@@ -118,6 +143,30 @@ $(document).ready(function () {
         loadStudents();
     }, 700));
 
+    $("#fromDate").on("change", function () {
+        updateDateInputPlaceholder(this);
+        currentPage = 1;
+        loadStudents();
+    });
+
+    $("#toDate").on("change", function () {
+        updateDateInputPlaceholder(this);
+        currentPage = 1;
+        loadStudents();
+    });
+
+    $("#btnReset").on("click", function () {
+        $("#searchInput").val("");
+        const fromDateInput = document.getElementById("fromDate");
+        const toDateInput = document.getElementById("toDate");
+        fromDateInput.value = "";
+        toDateInput.value = "";
+        updateDateInputPlaceholder(fromDateInput);
+        updateDateInputPlaceholder(toDateInput);
+        currentPage = 1;
+        loadStudents();
+    });
+
     document.getElementById("prevPage").addEventListener("click", () => {
         if (currentPage > 1) {
             currentPage--;
@@ -164,6 +213,44 @@ $(document).ready(function () {
         } else {
             console.error("Không tìm thấy ID học viên");
         }
+    });
+
+    $("#btnExport").on("click", function () {
+        const btn = $(this);
+        const originalHtml = btn.html();
+        btn.prop("disabled", true).html('<i class="ti ti-loader-2" style="animation: spin 1s linear infinite;"></i> Đang tải...');
+
+        $.ajax({
+            url: "/admin/api/student-overview/export",
+            type: "POST",
+            data: {
+                search: $("#searchInput").val(),
+                fromDate: $("#fromDate").val(),
+                toDate: $("#toDate").val()
+            },
+            xhrFields: {
+                responseType: "blob"
+            },
+            success: function (data) {
+                // Tạo blob URL và download
+                const blob = new Blob([data], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `DanhSachHocVien_${new Date().toISOString().split('T')[0]}.xlsx`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                
+                btn.prop("disabled", false).html(originalHtml);
+                showNotification("Tải danh sách thành công!");
+            },
+            error: function () {
+                btn.prop("disabled", false).html(originalHtml);
+                showNotification("Lỗi khi tải danh sách!");
+            }
+        });
     });
 });
 
