@@ -5,8 +5,8 @@
 <style>
     .scroll-box {
         width: 60%;
-        max-width: 960px;
-        height: calc(100vh - 140px); 
+        max-width: 1200px;
+        height: calc(100vh - 80px); 
         background: white;
         border: 1px solid #ccc;
         padding: 12px 20px 20px 20px;
@@ -65,10 +65,11 @@
 
     .answers-grid {
         display: grid;
-        grid-template-columns: repeat(2, auto); 
-        gap: 25px; /* Tăng khoảng cách cho thoáng */
+        grid-template-columns: repeat(2, 1fr);
+        gap: clamp(8px, 2.5%, 20px);
         margin-top: 15px;
-        justify-content: center; 
+        width: 100%;
+        box-sizing: border-box;
     }
 
     .answers-grid:has(.answer-item:nth-child(1)) .answer-item:has(img) .answer-text {
@@ -86,7 +87,6 @@
         .answers-grid {
             display: grid;
             gap: 15px; 
-            justify-content: center;
             justify-items: center;
             padding: 0 6px;
             width: 100%;
@@ -200,11 +200,9 @@
         align-items: center;
         justify-content: center;
         aspect-ratio: 1.65 / 1; 
-        
-        /* Kích thước khi có 4 đáp án (2x2) */
-        width: 50vh; 
-        max-width: 50vw; 
-
+        width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
         border-radius: 15px;
         border: 1px solid #e2e8f0;
         background: #f9fafb;
@@ -242,17 +240,16 @@
     }
 
     #quiz-container:has(#questionImage:not(.d-none)) .answer-item {
-        aspect-ratio: 3.5 / 1; 
-        height: 12vh;          
-        width: auto;           
-        min-width: 250px;
+        aspect-ratio: 3.5 / 1;
+        width: 100%;
+        height: auto;
         padding: 8px;
     }
 
     #quiz-container:has(#questionImage:not(.d-none)) .answer-item:first-child:nth-last-child(2),
     #quiz-container:has(#questionImage:not(.d-none)) .answer-item:first-child:nth-last-child(2) ~ .answer-item {
-        width: 40vh;
-        height: 12vh;
+        width: 100%;
+        height: auto;
         aspect-ratio: 3 / 1;
     }
 
@@ -262,7 +259,7 @@
     }
     .answer-item img {
         width: 100%;
-        height: 100%;
+        height: auto;
         object-fit: contain; 
         border-radius: 6px;
         margin: 0;
@@ -273,9 +270,11 @@
         line-height: 1.2;
         word-break: break-word;
         text-align: center;
-        font-size: 2.8rem; 
+        font-size: clamp(1rem, 3.5vw, 2.8rem);
         font-weight: 700;
         color: inherit;
+        min-width: 0;
+        overflow: hidden;
     }
 
     .answer-item:has(img) .answer-text {
