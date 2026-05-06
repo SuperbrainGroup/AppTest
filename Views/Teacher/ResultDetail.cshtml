@@ -142,22 +142,26 @@
         border-top-right-radius: 10px !important;
     }
 
-    /* MODIFIED: Làm nổi bật cột Kết quả và các chữ đúng/sai */
-    #attemptQuestionsBody td:last-child,
-    .text-success {
-        color: #000000 !important; /* Xanh đậm để rõ trên nền trắng */
+    /* Làm nổi bật dấu đúng/sai nhưng không ép màu chữ sang đen */
+    #attemptQuestionsBody td:last-child {
         opacity: 1 !important;
         font-weight: 600 !important;
         text-transform: none !important;
         font-size: 1rem !important;
         font-family: inherit !important;
-        -webkit-text-fill-color: #000000 !important;
     }
 
-    /* Nếu kết quả đang nằm trong Badge, ép màu cho Badge */
-    .badge.bg-success {
-        background-color: #198754 !important;
-        color: #fff !important;
+    #attemptCategoryTotalsChart {
+        width: 100%;
+        height: 340px;
+    }
+
+    #attemptQuestionsBody td:last-child .result-mark {
+        display: inline-block;
+        font-size: 1.5rem !important;
+        font-weight: 900 !important;
+        line-height: 1 !important;
+        -webkit-text-fill-color: currentColor !important;
     }
 @* -------- *@
     #radarChart {
@@ -165,20 +169,19 @@
         height: auto;
         min-height: 350px;
         max-height: 500px;
-        margin: 0 auto;
-        background: #ffffff00;
-        border-radius: 10px;
-        padding: 20px;
-    }
-
-    #columnChart {
-        width: 100%;
-        height: auto;
-        min-height: 350px;
-        max-height: 500px;
-        margin: 0 auto;
-        background: #ffffff00;
-        border-radius: 10px;
+                    <div class="table-responsive">
+                        <table class="table table-sm table-striped table-bordered align-middle bg-white">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width:48px;" class="text-center">#</th>
+                                    <th style="width:150px;">Danh mục</th>
+                                    <th>Câu hỏi</th>
+                                    <th style="width:120px;" class="text-center">Kết quả</th>
+                                </tr>
+                            </thead>
+                            <tbody id="attemptQuestionsBody"></tbody>
+                        </table>
+                    </div>
         padding: 20px;
     }
 </style>
@@ -257,7 +260,6 @@
                                     <th style="width:48px;" class="text-center">#</th>
                                     <th style="width:150px;">Danh mục</th>
                                     <th>Câu hỏi</th>
-                                    <th style="width:130px;" class="text-center">Điểm</th>
                                     <th style="width:120px;" class="text-center">Kết quả</th>
                                 </tr>
                             </thead>

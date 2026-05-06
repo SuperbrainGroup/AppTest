@@ -156,6 +156,13 @@ $(document).ready(function () {
             .replace(/'/g, "&#39;");
     }
 
+    function isSelfConfidenceCategory(categoryName) {
+        return String(categoryName ?? "")
+            .trim()
+            .toLowerCase()
+            .replace(/\s+/g, " ") === "tự tin";
+    }
+
     function initAttemptDropdown(chartData) {
         const $sel = $("#attemptSelect");
         if (!$sel.length) {
@@ -191,7 +198,7 @@ $(document).ready(function () {
             data: { testId: testId },
             success: function (res) {
                 if (!res || !res.success) {
-                    $("#attemptQuestionsBody").html(`<tr><td colspan="5" class="text-center text-danger">Không có dữ liệu phiên làm bài.</td></tr>`);
+                    $("#attemptQuestionsBody").html(`<tr><td colspan="4" class="text-center text-danger">Không có dữ liệu phiên làm bài.</td></tr>`);
                     return;
                 }
 
@@ -208,11 +215,14 @@ $(document).ready(function () {
                 if (questions.length) {
                     let rows = "";
                     questions.forEach((q, i) => {
-                        const badge = q.isCorrect
-                            ? `<span class="badge text-bg-success">Đúng</span>`
-                            : `<span class="badge text-bg-danger">Sai</span>`;
-                        const earned = q.earnedPoints ?? 0;
-                        const max = q.maxPoint ?? 0;
+                        const isSelfConfidence = isSelfConfidenceCategory(q.categoryName);
+                        const earned = Number(q.earnedPoints ?? 0);
+                        const max = Number(q.maxPoint ?? 0);
+                        const resultCell = isSelfConfidence
+                            ? `<span class="fw-bolder" style="font-size:1.15rem; color:#14532d;">${escapeHtml(String(earned))}/${escapeHtml(String(max))}</span>`
+                            : (q.isCorrect
+                                ? `<span class="result-mark" style="color:#198754;">✓</span>`
+                                : `<span class="result-mark" style="color:#dc3545;">✕</span>`);
                         const categoryDot = q.categoryColor
                             ? `<span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${escapeHtml(q.categoryColor)};margin-right:6px;vertical-align:middle;"></span>`
                             : "";
@@ -220,51 +230,96 @@ $(document).ready(function () {
                                     <td class="text-center">${i + 1}</td>
                                     <td class="small text-start">${categoryDot}${escapeHtml(q.categoryName || "")}</td>
                                     <td class="small text-start">${escapeHtml(q.questionName || "")}</td>
-                                    <td class="text-center">${escapeHtml(String(earned))}/${escapeHtml(String(max))}</td>
-                                    <td class="text-center">${badge}</td>
+                                    <td class="text-center">${resultCell}</td>
                                 </tr>`;
                     });
                     $("#attemptQuestionsBody").html(rows);
                 } else {
-                    $("#attemptQuestionsBody").html(`<tr><td colspan="5" class="text-center text-muted">Chưa có dữ liệu câu hỏi.</td></tr>`);
+                    $("#attemptQuestionsBody").html(`<tr><td colspan="4" class="text-center text-muted">Chưa có dữ liệu câu hỏi.</td></tr>`);
                 }
 
                 const totals = res.categoryTotals || [];
                 if (totals.length) {
-                    let totalRows = "";
-                    totals.forEach((t) => {
-                        const dot = t.categoryColor
-                            ? `<span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${escapeHtml(t.categoryColor)};margin-right:6px;vertical-align:middle;"></span>`
-                            : "";
-                        totalRows += `<tr>
-                                        <td>${dot}${escapeHtml(t.categoryName || "")}</td>
-                                        <td class="text-center">${escapeHtml(String(t.earnedPoints ?? 0))}/${escapeHtml(String(t.maxPoint ?? 0))}</td>
-                                        <td class="text-center">${escapeHtml(String(t.percent ?? 0))}%</td>
-                                    </tr>`;
-                    });
-
                     $("#attemptCategoryTotals").html(`
-                        <div class="fw-bolder mb-2">Tổng điểm theo danh mục</div>
-                        <div class="table-responsive">
-                            <table class="table table-sm table-bordered table-striped bg-white">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Danh mục</th>
-                                        <th class="text-center">Điểm</th>
-                                        <th class="text-center">%</th>
-                                    </tr>
-                                </thead>
-                                <tbody>${totalRows}</tbody>
-                            </table>
-                        </div>
+                        <div class="fw-bolder mb-2">Kết quả theo danh mục</div>
+                        <div id="attemptCategoryTotalsChart"></div>
                     `);
+                    drawCategoryTotalsChart(totals);
                 } else {
                     $("#attemptCategoryTotals").html(`<div class="text-muted">Chưa có dữ liệu tổng điểm.</div>`);
                 }
             },
             error: function () {
-                $("#attemptQuestionsBody").html(`<tr><td colspan="5" class="text-center text-danger">Lỗi tải chi tiết phiên.</td></tr>`);
+                $("#attemptQuestionsBody").html(`<tr><td colspan="4" class="text-center text-danger">Lỗi tải chi tiết phiên.</td></tr>`);
             }
+        });
+    }
+
+    function drawCategoryTotalsChart(totals) {
+        const chartDom = document.getElementById("attemptCategoryTotalsChart");
+        if (!chartDom) {
+            return;
+        }
+
+        const existingInstance = echarts.getInstanceByDom(chartDom);
+        if (existingInstance) {
+            existingInstance.dispose();
+        }
+
+        const reversedTotals = [...totals].reverse();
+        const categories = reversedTotals.map((item) => item.categoryName || "");
+        const values = reversedTotals.map((item) => Number(item.percent ?? 0));
+        const colors = reversedTotals.map((item) => item.categoryColor || "#198754");
+
+        const chart = echarts.init(chartDom);
+        chart.setOption({
+            grid: {
+                left: 120,
+                right: 20,
+                top: 20,
+                bottom: 20,
+                containLabel: true
+            },
+            tooltip: {
+                trigger: "axis",
+                axisPointer: { type: "shadow" },
+                formatter: function (params) {
+                    const item = params && params[0];
+                    if (!item) return "";
+                    return `${escapeHtml(item.name)}: <b>${escapeHtml(String(item.value))}%</b>`;
+                }
+            },
+            xAxis: {
+                type: "value",
+                max: 100,
+                axisLabel: { formatter: "{value}%" }
+            },
+            yAxis: {
+                type: "category",
+                data: categories,
+                axisLabel: {
+                    width: 110,
+                    overflow: "truncate",
+                    color: "#14532d",
+                    fontSize: 14,
+                    fontWeight: 800,
+                    fontFamily: '"Nunito Sans", sans-serif'
+                }
+            },
+            series: [{
+                type: "bar",
+                data: values.map((value, index) => ({
+                    value,
+                    itemStyle: { color: colors[index] }
+                })),
+                barMaxWidth: 24,
+                label: {
+                    show: true,
+                    position: "right",
+                    formatter: "{c}%",
+                    fontWeight: 700
+                }
+            }]
         });
     }
 
@@ -272,8 +327,10 @@ $(document).ready(function () {
         const radarChartDom = document.getElementById('radarChart');
         const myChart = echarts.init(radarChartDom);
 
+        const reversedCategories = [...categories].reverse();
+
         const seriesData = chartData.map((item) => ({
-            value: item.data,
+            value: [...(item.data || [])].reverse(),
             name: item.name
         }));
 
@@ -292,20 +349,22 @@ $(document).ready(function () {
                 }
             },
             radar: {
-                indicator: categories.map(name => ({
+                indicator: reversedCategories.map(name => ({
                     name: name,
                     max: 100,
                     textStyle: {
-                        fontFamily: 'Arial',
-                        fontSize: 12,
-                        color: '#fff'
+                        fontFamily: '"Nunito Sans", sans-serif',
+                        fontSize: 14,
+                        fontWeight: 800,
+                        color: '#14532d'
                     }
                 })),
 
                 axisName: {
-                    color: '#5a6659',
+                    color: '#14532d',
                     fontFamily: '"Nunito Sans", sans-serif',
-                    fontSize: 12
+                    fontSize: 14,
+                    fontWeight: 800
                 }
             },
             series: [{
@@ -321,6 +380,14 @@ $(document).ready(function () {
     function drawComparisonChart(categories, comparisonData) {
         const columnChartDom = document.getElementById('columnChart');
         const myChart = echarts.init(columnChartDom);
+
+        const reversedCategories = [...categories].reverse();
+        const reversedComparisonData = (comparisonData || []).map((item) => ({
+            ...item,
+            userData: [...(item.userData || [])].reverse(),
+            avgDataZero: [...(item.avgDataZero || [])].reverse(),
+            avgDataOther: [...(item.avgDataOther || [])].reverse()
+        }));
 
         const option = {
             title: {
@@ -349,7 +416,13 @@ $(document).ready(function () {
             },
             xAxis: {
                 type: 'category',
-                data: categories
+                data: reversedCategories,
+                axisLabel: {
+                    color: '#14532d',
+                    fontSize: 13,
+                    fontWeight: 800,
+                    fontFamily: '"Nunito Sans", sans-serif'
+                }
             },
             yAxis: {
                 type: 'value',
@@ -364,18 +437,18 @@ $(document).ready(function () {
                 {
                     name: 'Điểm của bạn',
                     type: 'bar',
-                    data: comparisonData[0].userData,
+                    data: reversedComparisonData[0].userData,
                     barGap: 0
                 },
                 {
                     name: 'Chưa học (Avg)',
                     type: 'bar',
-                    data: comparisonData[0].avgDataZero
+                    data: reversedComparisonData[0].avgDataZero
                 },
                 {
                     name: 'Đã học (Avg)',
                     type: 'bar',
-                    data: comparisonData[0].avgDataOther
+                    data: reversedComparisonData[0].avgDataOther
                 }
             ]
         };

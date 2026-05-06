@@ -324,18 +324,26 @@
         }
 
         function buildReviewHtml() {
+            function renderStatusMark(mark, color, width) {
+                return `<span class="result-mark" style="display:inline-flex;align-items:center;justify-content:center;width:${width};min-width:${width};font-family:Arial, sans-serif;font-size:1.5rem;line-height:1;font-weight:900;color:${color} !important;-webkit-text-fill-color:${color} !important;">${mark}</span>`;
+            }
+
+            function renderMissingMark() {
+                return `<span class="result-mark" style="display:inline-flex;align-items:center;justify-content:center;width:0.65em;min-width:0.65em;overflow:hidden;font-family:Arial, sans-serif;font-size:1.5rem;line-height:1;font-weight:900;color:#000000 !important;-webkit-text-fill-color:#000000 !important;transform:scaleX(0.8);transform-origin:center;">—</span>`;
+            }
+
             let rows = "";
             data.forEach(function (q, i) {
                 const ua = userAnswers[q.id];
                 const maxQ = maxPointForQuestion(q);
                 let statusHtml = "";
                 if (!ua) {
-                    statusHtml = '<span class="badge text-bg-secondary">Chưa trả lời</span>';
+                    statusHtml = renderMissingMark();
                 } else {
                     const ok = maxQ > 0 && ua.point >= maxQ;
                     statusHtml = ok
-                        ? '<span class="badge text-bg-success">Đúng</span>'
-                        : '<span class="badge text-bg-danger">Sai</span>';
+                        ? renderStatusMark("✓", "#198754", "1em")
+                        : renderStatusMark("✕", "#dc3545", "1em");
                 }
                 const categoryColor = q.categoryColor || "#198754";
                 const categoryDisplay = `<span style="display: inline-block; width: 12px; height: 12px; background-color: ${categoryColor}; border-radius: 2px; margin-right: 6px;"></span>${escapeHtml(q.categoryName || "")}`;
