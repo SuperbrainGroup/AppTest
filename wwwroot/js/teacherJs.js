@@ -214,10 +214,9 @@ $(document).ready(function () {
     function updateTotalScore() {
         let totalEarned = 0;
         $('#showlist_input .paper-question-input').each(function () {
-            const point = parseInt($(this).val());
-            if (!isNaN(point)) {
-                totalEarned += point;
-            }
+            const rawPoint = $(this).val();
+            const point = rawPoint === '' || rawPoint === null ? 0 : parseInt(rawPoint, 10);
+            totalEarned += isNaN(point) ? 0 : point;
         });
         $('#totalEarnedScore').text(totalEarned);
     }
@@ -228,19 +227,18 @@ $(document).ready(function () {
         const generalComment = ($("#generalComment").val() || "").toString();
 
         $('#showlist_input input[type="number"]').each(function () {
-            const point = parseInt($(this).val());
+            const rawPoint = $(this).val();
+            const point = rawPoint === '' || rawPoint === null ? 0 : parseInt(rawPoint, 10);
             const maxPoint = parseInt($(this).data('maxpoint'));
             const questionId = parseInt($(this).data('id'));
             const categoryId = parseInt($(this).data('categoryid'));
-            if (!isNaN(point)) {
-                data.push({
-                    SessionId: sessionId,
-                    QuestionId: questionId,
-                    CategoryId: categoryId,
-                    PointEarned: point,
-                    MaxPoint: maxPoint
-                });
-            }
+            data.push({
+                SessionId: sessionId,
+                QuestionId: questionId,
+                CategoryId: categoryId,
+                PointEarned: isNaN(point) ? 0 : point,
+                MaxPoint: maxPoint
+            });
         });
 
         $.ajax({
